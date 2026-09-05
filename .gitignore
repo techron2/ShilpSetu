@@ -1,0 +1,88 @@
+# ==========================================
+# ShilpSetu Unified Monorepo .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------
+.env
+.env.local
+.env.*.local
+serviceAccountKey.json
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+
+# Keep placeholders tracked
+!serviceAccountKey.json.placeholder
+
+# ------------------------------------------
+# Python & Flask Backend
+# ------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv/
+backend/env/
+venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+*.log
+
+# ------------------------------------------
+# Flutter & Dart Frontend
+# ------------------------------------------
+frontend/.dart_tool/
+frontend/.packages
+frontend/.pub/
+frontend/.pub-cache/
+frontend/build/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+
+# Flutter generated files
+*.lock
+!frontend/pubspec.lock
+
+# ------------------------------------------
+# Editors & IDEs
+# ------------------------------------------
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ------------------------------------------
+# Operating System files
+# ------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
