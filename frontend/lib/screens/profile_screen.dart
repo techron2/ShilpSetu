@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../main.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -6,6 +9,20 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AppAuthProvider>();
+    final user = auth.userModel;
+    final isSignedIn = auth.isSignedIn;
+
+    final displayName = user?.name ??
+        auth.firebaseUser?.displayName ??
+        'श्रीमती राधा देवी (Radha Devi)';
+    final roleText = user != null
+        ? (user.role == 'artisan'
+            ? '⭐ शिल्पकार (Artisan)'
+            : '🛒 खरीदार (Buyer)')
+        : '⭐ मास्टर टेराकोटा शिल्पकार (Master Artisan)';
+    final subText = user?.email ?? 'कला: गोरखपुर टेराकोटा क्लस्टर, उत्तर प्रदेश';
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -41,9 +58,9 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    "श्रीमती राधा देवी (Radha Devi)",
-                    style: TextStyle(
+                  Text(
+                    displayName,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.darkIndigo,
@@ -56,9 +73,9 @@ class ProfileScreen extends StatelessWidget {
                       color: AppTheme.secondaryOchre.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      "⭐ मास्टर टेराकोटा शिल्पकार (Master Artisan)",
-                      style: TextStyle(
+                    child: Text(
+                      roleText,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.secondaryOchre,
@@ -66,9 +83,9 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "कला: गोरखपुर टेराकोटा क्लस्टर, उत्तर प्रदेश",
-                    style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                  Text(
+                    subText,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
@@ -116,6 +133,50 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
+
+            const SizedBox(height: 16),
+
+            // Sign out or Login button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isSignedIn ? AppTheme.warningRed : AppTheme.primaryTerracotta,
+                  side: BorderSide(
+                    color: isSignedIn ? AppTheme.warningRed : AppTheme.primaryTerracotta,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: Icon(isSignedIn ? Icons.logout_rounded : Icons.login_rounded),
+                label: Text(
+                  isSignedIn ? "लॉग आउट (Log Out)" : "लॉग इन / खाता बदलें (Login / Switch)",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onPressed: () async {
+                  if (isSignedIn) {
+                    await auth.signOut();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("सफलतापूर्वक लॉग आउट हो गए (Logged out)")),
+                      );
+                    }
+                  } else {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AuthGate()),
+                      (route) => false,
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

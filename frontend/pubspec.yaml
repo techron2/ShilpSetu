@@ -20,6 +20,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.13.2
+  
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -40,6 +41,8 @@ dependencies:
   cloud_firestore: ^6.9.0
   firebase_storage: ^13.5.0
   http: ^1.6.0
+  image_picker: ^1.1.2
+  record: ^7.1.1
 
 dev_dependencies:
   flutter_test:

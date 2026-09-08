@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'artisan/photo_capture_screen.dart';
 
 class CatalogScreen extends StatelessWidget {
   const CatalogScreen({super.key});
@@ -122,11 +123,9 @@ class CatalogScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("📷 AI कैमरा स्कैनर खुल रहा है... (AI Camera Cataloger)"),
-                          backgroundColor: AppTheme.primaryTerracotta,
-                        ),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PhotoCaptureScreen()),
                       );
                     },
                   ),

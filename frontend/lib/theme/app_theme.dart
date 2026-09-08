@@ -13,6 +13,7 @@ class AppTheme {
   static const Color borderGrey = Color(0xFFE5DFD7);        // Subtle soft border
   static const Color successGreen = Color(0xFF2E7D32);      // Natural leaf green
   static const Color inTransitBlue = Color(0xFF1976D2);     // Delivery blue
+  static const Color warningRed = Color(0xFFD32F2F);        // Warning/error red
 
   static ThemeData get lightTheme {
     return ThemeData(

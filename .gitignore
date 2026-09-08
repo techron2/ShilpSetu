@@ -9,6 +9,8 @@
 .env.local
 .env.*.local
 serviceAccountKey.json
+backend/serviceAccountKey.json
+**/serviceAccountKey.json
 *firebase-adminsdk*.json
 google-services.json
 GoogleService-Info.plist

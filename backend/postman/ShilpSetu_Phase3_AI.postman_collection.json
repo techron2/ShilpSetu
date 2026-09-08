@@ -1,0 +1,148 @@
+{
+  "info": {
+    "_postman_id": "shilpsetu-phase3-ai-suite",
+    "name": "ShilpSetu Phase 3 AI - Pricing & Business Assistant",
+    "description": "Postman test collection for Phase 3 AI features: Scikit-learn Fair-Trade Price Prediction and Gemini-powered AI Business Assistant.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Price Suggestion - Madhubani Painting (Bihar)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"Painting\",\n  \"material_cost\": 120,\n  \"size\": \"medium\",\n  \"region\": \"Bihar\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/pricing/suggest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "pricing", "suggest"]
+        }
+      }
+    },
+    {
+      "name": "2. Price Suggestion - Terracotta Kulhads (UP)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"Pottery\",\n  \"material_cost\": 45,\n  \"size\": \"small\",\n  \"region\": \"Uttar Pradesh\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/pricing/suggest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "pricing", "suggest"]
+        }
+      }
+    },
+    {
+      "name": "3. Price Suggestion - Block Printed Saree (Rajasthan)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"Textiles\",\n  \"material_cost\": 750,\n  \"size\": \"large\",\n  \"region\": \"Rajasthan\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/pricing/suggest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "pricing", "suggest"]
+        }
+      }
+    },
+    {
+      "name": "4. Business Assistant - Diwali Seasonality (Hindi)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"artisan_id\": \"artisan_001\",\n  \"question\": \"दीवाली के मौसम में मुझे अपने कुल्हड़ और दीयों की कीमत क्या रखनी चाहिए?\",\n  \"language\": \"hi\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/assistant/ask",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "assistant", "ask"]
+        }
+      }
+    },
+    {
+      "name": "5. Business Assistant - Sales Advice (English)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"artisan_id\": \"artisan_001\",\n  \"question\": \"Why are my textile stoles selling slowly and how can I attract more online buyers?\",\n  \"language\": \"en\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/assistant/ask",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "assistant", "ask"]
+        }
+      }
+    },
+    {
+      "name": "6. Business Assistant - Packaging Advice (Hindi)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"artisan_id\": \"artisan_001\",\n  \"question\": \"शहरी ग्राहकों को आकर्षित करने के लिए मुझे अपने धातु शिल्प (Dhokra craft) की पैकेजिंग में क्या सुधार करना चाहिए?\",\n  \"language\": \"hi\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/api/assistant/ask",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["api", "assistant", "ask"]
+        }
+      }
+    }
+  ]
+}

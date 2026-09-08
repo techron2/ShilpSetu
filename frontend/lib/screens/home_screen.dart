@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../theme/app_theme.dart';
+import 'artisan/my_products_screen.dart';
+import 'artisan/business_assistant_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -44,27 +47,35 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 14),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "नमस्ते, राधा जी 🙏",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            "गोरखपुर टेराकोटा क्लस्टर (Uttar Pradesh)",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      child: Consumer<AppAuthProvider>(
+                        builder: (context, auth, _) {
+                          final name = auth.userModel?.name ?? auth.firebaseUser?.displayName ?? 'Artisan';
+                          final cluster = auth.userModel?.artisanCluster;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'नमस्ते, $name 🙏',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                cluster != null && cluster.isNotEmpty
+                                    ? cluster
+                                    : 'ShilpSetu Artisan',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -72,14 +83,10 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 // Audio Assistant Pill (Essential for Low Literacy Artisans)
                 InkWell(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("🎙️ वॉयस असिस्टेंट चालू है (Audio Guide Active)"),
-                        backgroundColor: AppTheme.darkIndigo,
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+                  ),
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -91,10 +98,10 @@ class HomeScreen extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.mic, color: Colors.white, size: 20),
+                        Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
                         SizedBox(width: 8),
                         Text(
-                          "बोलकर निर्देश सुनें (Voice Help)",
+                          "व्यापार सहायक से पूछें (AI Assistant)",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -165,9 +172,91 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
+          // Prominent AI Business Assistant Card
+          InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+            ),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.darkIndigo, Color(0xFF2C3258)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.darkIndigo.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryTerracotta.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.primaryTerracotta.withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          '💬 AI व्यापार सहायक (Business Guide)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'कीमत, बिक्री और त्योहारों के ऑफर पर सीधी सलाह लें',
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white12,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
           ElevatedButton.icon(
+            icon: const Icon(Icons.inventory_2_rounded, size: 24),
+            label: const Text('🏺 मेरे उत्पाद देखें (My Products)'),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyProductsScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          OutlinedButton.icon(
             icon: const Icon(Icons.add_a_photo_rounded, size: 24),
-            label: const Text("📸 नया शिल्प जोड़ें (Add New Craft)"),
+            label: const Text('📸 नया शिल्प जोड़ें (Add New Craft)'),
             onPressed: () => context.read<NavigationProvider>().setIndex(1),
           ),
 
@@ -175,7 +264,7 @@ class HomeScreen extends StatelessWidget {
 
           OutlinedButton.icon(
             icon: const Icon(Icons.receipt_long_rounded, size: 24),
-            label: const Text("📦 ऑर्डर और डिलीवरी देखें (View Orders)"),
+            label: const Text('📦 ऑर्डर और डिलीवरी देखें (View Orders)'),
             onPressed: () => context.read<NavigationProvider>().setIndex(2),
           ),
         ],

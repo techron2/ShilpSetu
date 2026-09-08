@@ -6,6 +6,7 @@ import 'home_screen.dart';
 import 'catalog_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
+import 'artisan/business_assistant_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -56,6 +57,16 @@ class MainScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            tooltip: "व्यापार सहायक (AI Business Assistant)",
+            icon: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+              );
+            },
+          ),
+          IconButton(
             tooltip: "वॉयस गाइड (Voice Guide)",
             icon: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
             onPressed: () {
@@ -69,6 +80,22 @@ class MainScreen extends StatelessWidget {
           ),
           const SizedBox(width: 8),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+          );
+        },
+        backgroundColor: AppTheme.primaryTerracotta,
+        foregroundColor: Colors.white,
+        elevation: 5,
+        icon: const Icon(Icons.support_agent_rounded, size: 24),
+        label: const Text(
+          "AI व्यापार सहायक",
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+        ),
       ),
       body: IndexedStack(
         index: nav.currentIndex,

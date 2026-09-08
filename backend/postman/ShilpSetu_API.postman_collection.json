@@ -1,0 +1,236 @@
+{
+  "info": {
+    "_postman_id": "shilpsetu-api-v2",
+    "name": "ShilpSetu API",
+    "description": "Complete API collection for ShilpSetu — AI-Driven Market Linkage App for Marginalized Artisans.\n\nBase URL: http://127.0.0.1:5000\n\nAll endpoints fall back to mock data when Firestore is not connected.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:5000", "type": "string" },
+    { "key": "product_id", "value": "mock_prod_002", "type": "string" },
+    { "key": "user_uid",   "value": "mock_uid_001",  "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/health",
+            "description": "Verify the backend is running. Returns {\"status\": \"ok\"}."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": { "method": "GET", "url": "{{base_url}}/api/health" },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "POST /api/products — Create product",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"artisan_id\": \"{{user_uid}}\",\n  \"title\": \"Madhubani Painting on Silk\",\n  \"description\": \"Traditional Madhubani folk art painted on pure silk fabric, depicting nature and mythology.\",\n  \"image_url\": \"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600\",\n  \"price\": 2500,\n  \"stock_quantity\": 3,\n  \"category\": \"Painting\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates a new product in the Firestore 'products' collection.\n\nRequired fields: artisan_id, title, price, stock_quantity\nOptional: description, image_url, category"
+          },
+          "response": [
+            {
+              "name": "201 Created (mock mode)",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"product\": {\n    \"id\": \"mock_a1b2c3d4\",\n    \"artisan_id\": \"mock_uid_001\",\n    \"title\": \"Madhubani Painting on Silk\",\n    \"description\": \"Traditional Madhubani folk art...\",\n    \"image_url\": \"https://images.unsplash.com/...\",\n    \"price\": 2500,\n    \"stock_quantity\": 3,\n    \"category\": \"Painting\",\n    \"created_at\": \"mock_timestamp\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — missing fields",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": \"Missing fields: ['artisan_id', 'price']\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/products — List all products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "artisan_id", "value": "{{user_uid}}", "disabled": true, "description": "Optional: filter by artisan UID" }
+              ]
+            },
+            "description": "Returns all products. Add ?artisan_id=UID to filter by artisan."
+          },
+          "response": [
+            {
+              "name": "200 OK — mock mode",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"products\": [\n    {\n      \"id\": \"mock_prod_001\",\n      \"artisan_id\": \"artisan_001\",\n      \"title\": \"Handcrafted Terracotta Chai Kulhad Set (6 pcs)\",\n      \"price\": 350,\n      \"stock_quantity\": 18,\n      \"category\": \"Pottery\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/products/:id — Get single product",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/products/{{product_id}}",
+            "description": "Fetch a single product by its Firestore document ID (or mock ID)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"product\": {\n    \"id\": \"mock_prod_002\",\n    \"artisan_id\": \"artisan_001\",\n    \"title\": \"Natural Indigo Dabu Block Print Stole\",\n    \"price\": 890,\n    \"stock_quantity\": 12,\n    \"category\": \"Textiles\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": \"Product not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/products/:id — Update product",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/products/{{product_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 950,\n  \"stock_quantity\": 8,\n  \"description\": \"Updated description for the Dabu stole.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update any subset of: title, description, image_url, price, stock_quantity, category."
+          },
+          "response": [
+            {
+              "name": "200 OK — updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"product\": {\n    \"id\": \"mock_prod_002\",\n    \"price\": 950,\n    \"stock_quantity\": 8\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/products/:id — Delete product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/products/{{product_id}}",
+            "description": "Permanently delete a product from Firestore (or mock store)."
+          },
+          "response": [
+            {
+              "name": "200 OK — deleted",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Product mock_prod_002 deleted (mock)\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": \"Product not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST /api/users — Create user profile",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"firebase_uid_here\",\n  \"email\": \"artisan@shilpsetu.in\",\n  \"name\": \"Meera Kumari\",\n  \"role\": \"artisan\",\n  \"phone\": \"+91-9876543210\",\n  \"language_preference\": \"hi\",\n  \"artisan_cluster\": \"Madhubani Cluster\",\n  \"region\": \"Darbhanga, Bihar\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Called after Firebase Auth signup to store profile info in Firestore 'users' collection.\n\nRequired: uid, email, role (artisan | buyer)"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"user\": {\n    \"uid\": \"firebase_uid_here\",\n    \"email\": \"artisan@shilpsetu.in\",\n    \"name\": \"Meera Kumari\",\n    \"role\": \"artisan\",\n    \"phone\": \"+91-9876543210\",\n    \"language_preference\": \"hi\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — invalid role",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": \"role must be one of ['artisan', 'buyer']\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/users/:uid — Get user profile",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/users/{{user_uid}}",
+            "description": "Fetch the profile of a user by their Firebase Auth UID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"user\": {\n    \"uid\": \"mock_uid_001\",\n    \"name\": \"Radha Devi\",\n    \"email\": \"radha@example.com\",\n    \"role\": \"artisan\",\n    \"phone\": \"+91-9876543210\",\n    \"language_preference\": \"hi\",\n    \"artisan_cluster\": \"Gorakhpur Terracotta\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": \"User not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/users/:uid — Update user profile",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/users/{{user_uid}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Radha Devi Prajapati\",\n  \"language_preference\": \"hi\",\n  \"phone\": \"+91-9876543211\",\n  \"artisan_cluster\": \"Gorakhpur Terracotta Cluster\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update mutable profile fields: name, phone, language_preference, artisan_cluster, region, role."
+          },
+          "response": [
+            {
+              "name": "200 OK — updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"source\": \"mock\",\n  \"user\": {\n    \"uid\": \"mock_uid_001\",\n    \"name\": \"Radha Devi Prajapati\",\n    \"language_preference\": \"hi\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

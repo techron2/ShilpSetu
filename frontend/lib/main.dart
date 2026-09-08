@@ -1,47 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'firebase_options.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/product_provider.dart';
 import 'screens/main_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Safely initialize Firebase (graceful fallback if placeholder keys are active)
-  try {
-    final apiKey = DefaultFirebaseOptions.currentPlatform.apiKey;
-    if (!apiKey.contains('PLACEHOLDER')) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      debugPrint("[Firebase] Initialized with live project credentials.");
-    } else {
-      debugPrint("[Firebase] Running in placeholder mode. Real credentials can be added later in firebase_options.dart.");
-    }
-  } catch (e) {
-    debugPrint("[Firebase] Setup note: $e (App running in local UI mode).");
-  }
-
-  runApp(const ShilpSetuApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
 }
 
-class ShilpSetuApp extends StatelessWidget {
-  const ShilpSetuApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AppAuthProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
       ],
       child: MaterialApp(
         title: 'ShilpSetu - Artisan App',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const MainScreen(),
+        home: const AuthGate(),
       ),
+    );
+  }
+}
+
+/// Backwards-compatible alias for ShilpSetuApp
+typedef ShilpSetuApp = MyApp;
+
+/// Top-level single source of truth for authentication state.
+///
+/// Listens directly to [FirebaseAuth.instance.authStateChanges()].
+/// - If authenticated: ensures navigation resets to Home tab (index 0) and renders [MainScreen].
+/// - If unauthenticated: renders [AuthWrapper] which toggles between [LoginScreen]
+///   and [SignupScreen] at the root level without stacking separate routes.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AppTheme.bgParchment,
+            body: Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+            ),
+          );
+        }
+
+        final user = snapshot.data;
+        if (user != null) {
+          // Reset navigation tab to Home (0) and clear any pushed dialogs/routes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              context.read<NavigationProvider>().setIndex(0);
+            }
+          });
+          return const MainScreen();
+        } else {
+          return const AuthWrapper();
+        }
+      },
+    );
+  }
+}
+
+/// Root-level toggle between [LoginScreen] and [SignupScreen].
+/// Prevents pushing separate modal routes onto the Navigator stack.
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _showLogin = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: _showLogin
+          ? LoginScreen(
+              key: const ValueKey('LoginScreen'),
+              onSwitchToSignUp: () => setState(() => _showLogin = false),
+            )
+          : SignupScreen(
+              key: const ValueKey('SignupScreen'),
+              onSwitchToLogin: () => setState(() => _showLogin = true),
+            ),
     );
   }
 }

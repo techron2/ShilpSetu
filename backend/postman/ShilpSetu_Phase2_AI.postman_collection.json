@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "ShilpSetu Phase 2 AI Endpoints",
+    "_postman_id": "shilpsetu-phase2-ai-2026",
+    "description": "Postman test suite for ShilpSetu Phase 2 AI Features: Background Removal & Auto-Contrast Image Enhancement, and Voice-to-Catalog Multilingual Pipeline.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Enhance Product Image (rembg + OpenCV)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": "sample_craft.jpg",
+              "description": "Artisan craft photo (JPEG/PNG) to remove background and enhance contrast to 1080x1080"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/products/enhance-image",
+          "host": ["{{base_url}}"],
+          "path": ["api", "products", "enhance-image"]
+        },
+        "description": "Removes background via rembg (U2-Net), enhances contrast via OpenCV CLAHE, centers onto 1080x1080 1:1 e-commerce canvas, and uploads to Firebase Storage or local static storage."
+      }
+    },
+    {
+      "name": "2. Voice-to-Catalog (Multipart Audio)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "audio",
+              "type": "file",
+              "src": "sample_audio.wav",
+              "description": "Recorded artisan audio clip"
+            },
+            {
+              "key": "language",
+              "value": "hi",
+              "type": "text",
+              "description": "Spoken language code (e.g. hi, mr, ta, en)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/catalog/voice-to-listing",
+          "host": ["{{base_url}}"],
+          "path": ["api", "catalog", "voice-to-listing"]
+        },
+        "description": "Transcribes artisan speech to text via Google Speech Recognition, uses Gemini AI to extract structured product listing, and translates to produce both English and Hindi."
+      }
+    },
+    {
+      "name": "3. Voice-to-Catalog (Spoken Transcript JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transcript\": \"यह शुद्ध लाल मिट्टी से बना पारंपरिक टेराकोटा कुल्हड़ और चाय सेट है, गोरखपुर के कारीगरों द्वारा चाक पर हाथ से बनाया गया\",\n  \"language\": \"hi\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/catalog/voice-to-listing",
+          "host": ["{{base_url}}"],
+          "path": ["api", "catalog", "voice-to-listing"]
+        },
+        "description": "Direct voice transcript test to verify Gemini structured extraction and bilingual English/Hindi generation."
+      }
+    },
+    {
+      "name": "4. Friendly Low-Literacy Error Test (Missing Audio)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "language",
+              "value": "hi",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/catalog/voice-to-listing",
+          "host": ["{{base_url}}"],
+          "path": ["api", "catalog", "voice-to-listing"]
+        },
+        "description": "Verifies that friendly, accessible error messages in the artisan's language are returned."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    }
+  ]
+}

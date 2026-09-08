@@ -1,24 +1,11 @@
 // File generated for ShilpSetu Firebase integration.
-//
-// HOW TO CONFIGURE REAL KEYS LATER:
-// 1. Install FlutterFire CLI: dart pub global activate flutterfire_cli
-// 2. Run: flutterfire configure --project=YOUR_FIREBASE_PROJECT_ID
-// 3. Or simply replace the placeholder strings below with your project values from the Firebase Console.
-
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your ShilpSetu Firebase app.
 ///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
+/// Uses manual Firebase configuration for shilpsetu-37bcd across all platforms.
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -32,48 +19,47 @@ class DefaultFirebaseOptions {
       case TargetPlatform.windows:
         return windows;
       default:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions are not configured for this platform.',
-        );
+        return web;
     }
   }
 
-  // Web Firebase configuration placeholder
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSy_PLACEHOLDER_WEB_API_KEY_1234567890',
-    appId: '1:123456789012:web:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'shilpsetu-artisan-app',
-    authDomain: 'shilpsetu-artisan-app.firebaseapp.com',
-    storageBucket: 'shilpsetu-artisan-app.appspot.com',
+    apiKey: 'AIzaSyA5GiBRYuIXq6JcXM08i5hCWaDndBaJGJg',
+    appId: '1:358442929186:web:1d286c62125793cb95ce7b',
+    messagingSenderId: '358442929186',
+    projectId: 'shilpsetu-37bcd',
+    authDomain: 'shilpsetu-37bcd.firebaseapp.com',
+    storageBucket: 'shilpsetu-37bcd.firebasestorage.app',
+    measurementId: 'G-2EJCFT7NRJ',
   );
 
-  // Android Firebase configuration placeholder
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSy_PLACEHOLDER_ANDROID_API_KEY_123456',
-    appId: '1:123456789012:android:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'shilpsetu-artisan-app',
-    storageBucket: 'shilpsetu-artisan-app.appspot.com',
+    apiKey: 'AIzaSyA5GiBRYuIXq6JcXM08i5hCWaDndBaJGJg',
+    appId: '1:358442929186:web:1d286c62125793cb95ce7b',
+    messagingSenderId: '358442929186',
+    projectId: 'shilpsetu-37bcd',
+    authDomain: 'shilpsetu-37bcd.firebaseapp.com',
+    storageBucket: 'shilpsetu-37bcd.firebasestorage.app',
+    measurementId: 'G-2EJCFT7NRJ',
   );
 
-  // iOS Firebase configuration placeholder
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSy_PLACEHOLDER_IOS_API_KEY_1234567890',
-    appId: '1:123456789012:ios:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'shilpsetu-artisan-app',
-    storageBucket: 'shilpsetu-artisan-app.appspot.com',
-    iosBundleId: 'com.shilpsetu.frontend',
+    apiKey: 'AIzaSyA5GiBRYuIXq6JcXM08i5hCWaDndBaJGJg',
+    appId: '1:358442929186:web:1d286c62125793cb95ce7b',
+    messagingSenderId: '358442929186',
+    projectId: 'shilpsetu-37bcd',
+    authDomain: 'shilpsetu-37bcd.firebaseapp.com',
+    storageBucket: 'shilpsetu-37bcd.firebasestorage.app',
+    measurementId: 'G-2EJCFT7NRJ',
   );
 
-  // Windows Firebase configuration placeholder
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSy_PLACEHOLDER_WINDOWS_API_KEY_123456',
-    appId: '1:123456789012:web:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'shilpsetu-artisan-app',
-    authDomain: 'shilpsetu-artisan-app.firebaseapp.com',
-    storageBucket: 'shilpsetu-artisan-app.appspot.com',
+    apiKey: 'AIzaSyA5GiBRYuIXq6JcXM08i5hCWaDndBaJGJg',
+    appId: '1:358442929186:web:1d286c62125793cb95ce7b',
+    messagingSenderId: '358442929186',
+    projectId: 'shilpsetu-37bcd',
+    authDomain: 'shilpsetu-37bcd.firebaseapp.com',
+    storageBucket: 'shilpsetu-37bcd.firebasestorage.app',
+    measurementId: 'G-2EJCFT7NRJ',
   );
 }
