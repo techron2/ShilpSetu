@@ -114,3 +114,101 @@ def update_user(uid):
         return jsonify({"success": False, "error": "User not found"}), 404
     _MOCK_USERS[uid].update(updates)
     return jsonify({"success": True, "source": "mock", "user": _MOCK_USERS[uid]}), 200
+
+
+# ---------------------------------------------------------------------------
+# Trust Score Calculation Helper
+# ---------------------------------------------------------------------------
+def calculate_trust_score(uid: str, db=None) -> dict:
+    """
+    Computes a weighted trust score:
+    - 50% order completion rate: delivered / (delivered + cancelled)
+    - 50% average buyer rating (out of 5.0, default 4.8 for new artisans)
+    Updates the score on the user document in Firestore.
+    """
+    if db is None:
+        db = get_firestore_client()
+
+    completion_rate = 1.0
+    total_orders = 0
+    delivered_count = 0
+    cancelled_count = 0
+    ratings = []
+
+    if db:
+        try:
+            orders = db.collection('orders').where('artisan_id', '==', uid).stream()
+            for o in orders:
+                data = o.to_dict()
+                total_orders += 1
+                status = data.get('status', '').lower()
+                if status == 'delivered':
+                    delivered_count += 1
+                elif status == 'cancelled':
+                    cancelled_count += 1
+                
+                if 'rating' in data and data['rating'] is not None:
+                    try:
+                        ratings.append(float(data['rating']))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    finished_orders = delivered_count + cancelled_count
+    if finished_orders > 0:
+        completion_rate = round(delivered_count / finished_orders, 2)
+    elif total_orders > 0:
+        completion_rate = 0.95
+    else:
+        completion_rate = 1.0
+
+    avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else 4.8
+    # Weighted calculation: Completion rate (scaled to 5.0) * 0.5 + Avg Rating * 0.5
+    trust_score = round((completion_rate * 5.0 * 0.5) + (avg_rating * 0.5), 1)
+
+    if trust_score >= 4.7:
+        badge = "🌟 Master Artisan"
+    elif trust_score >= 4.3:
+        badge = "✅ Verified Artisan"
+    elif trust_score >= 4.0:
+        badge = "🌱 Rising Artisan"
+    else:
+        badge = "✨ Certified Craftmaker"
+
+    score_data = {
+        "uid": uid,
+        "trust_score": trust_score,
+        "rating": avg_rating,
+        "completion_rate": completion_rate,
+        "completion_rate_pct": int(completion_rate * 100),
+        "total_orders": total_orders,
+        "delivered_orders": delivered_count,
+        "badge": badge
+    }
+
+    # Persist in Firestore
+    if db:
+        try:
+            ref = db.collection('users').document(uid)
+            if ref.get().exists:
+                ref.update({
+                    "trust_score": trust_score,
+                    "rating": avg_rating,
+                    "completion_rate": completion_rate,
+                    "trust_badge": badge
+                })
+        except Exception:
+            pass
+
+    return score_data
+
+
+# ---------------------------------------------------------------------------
+# GET /api/users/<uid>/trust-score — Get or recalculate artisan trust score
+# ---------------------------------------------------------------------------
+@users_bp.route('/<uid>/trust-score', methods=['GET'])
+def get_user_trust_score(uid):
+    score = calculate_trust_score(uid)
+    return jsonify({"success": True, "data": score}), 200
+

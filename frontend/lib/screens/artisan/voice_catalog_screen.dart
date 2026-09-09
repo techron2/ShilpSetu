@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 import '../../services/ai_catalog_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 import 'listing_review_screen.dart';
 
 class VoiceCatalogScreen extends StatefulWidget {
@@ -206,6 +207,7 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: const Text('🎙️ बोलकर विवरण जोड़ें (Voice Listing)'),
         backgroundColor: AppTheme.primaryTerracotta,
       ),

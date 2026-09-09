@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/assistant_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 
 class ChatMessage {
   final String text;
@@ -228,6 +229,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Row(
           children: [
             Container(

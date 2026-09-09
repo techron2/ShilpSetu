@@ -5,6 +5,8 @@ import '../providers/navigation_provider.dart';
 import '../theme/app_theme.dart';
 import 'artisan/my_products_screen.dart';
 import 'artisan/business_assistant_screen.dart';
+import 'analytics/analytics_screen.dart';
+import 'cluster/virtual_cluster_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -254,6 +256,33 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
+          ElevatedButton.icon(
+            icon: const Icon(Icons.bar_chart_rounded, size: 24),
+            label: const Text('📊 बिज़नेस एनालिटिक्स व चार्ट (Analytics)'),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.darkIndigo,
+              foregroundColor: Colors.white,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          OutlinedButton.icon(
+            icon: const Icon(Icons.hub_rounded, size: 24),
+            label: const Text('🤝 वर्चुअल शिल्प क्लस्टर (Virtual Cluster Hub)'),
+            onPressed: () => VirtualClusterDialog.show(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF8C6E14),
+              side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
           OutlinedButton.icon(
             icon: const Icon(Icons.add_a_photo_rounded, size: 24),
             label: const Text('📸 नया शिल्प जोड़ें (Add New Craft)'),
@@ -327,51 +356,58 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildEarningsCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFC8E6C9)),
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: AppTheme.successGreen,
-              shape: BoxShape.circle,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFC8E6C9)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: AppTheme.successGreen,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.currency_rupee, color: Colors.white, size: 24),
             ),
-            child: const Icon(Icons.currency_rupee, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "इस महीने की कुल कमाई (This Month's Earnings)",
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2E7D32),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "इस महीने की कुल कमाई (This Month's Earnings) →",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2E7D32),
+                    ),
                   ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  "₹ 12,450",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1B5E20),
+                  SizedBox(height: 2),
+                  Text(
+                    "₹ 12,450",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B5E20),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.verified, color: AppTheme.successGreen, size: 22),
-        ],
+            const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.successGreen, size: 18),
+          ],
+        ),
       ),
     );
   }

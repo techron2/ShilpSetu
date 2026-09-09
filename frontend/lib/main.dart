@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/language_provider.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: MaterialApp(
         title: 'ShilpSetu - Artisan App',
@@ -68,11 +70,15 @@ class AuthGate extends StatelessWidget {
 
         final user = snapshot.data;
         if (user != null) {
-          // Reset navigation tab to Home (0) and clear any pushed dialogs/routes
+          // Reset navigation tab to Home (0) and sync language preference from profile
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
               Navigator.of(context).popUntil((route) => route.isFirst);
               context.read<NavigationProvider>().setIndex(0);
+              final authUser = context.read<AppAuthProvider>().userModel;
+              if (authUser != null) {
+                context.read<LanguageProvider>().syncFromProfile(authUser.languagePreference);
+              }
             }
           });
           return const MainScreen();

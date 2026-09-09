@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/ai_catalog_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 import 'voice_catalog_screen.dart';
 
 class PhotoCaptureScreen extends StatefulWidget {
@@ -132,6 +133,7 @@ class _PhotoCaptureScreenState extends State<PhotoCaptureScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: const Text('📷 स्मार्ट AI फोटो संवारें (Smart Photo)'),
         backgroundColor: AppTheme.primaryTerracotta,
       ),

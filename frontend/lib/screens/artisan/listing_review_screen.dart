@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../services/pricing_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 
 const List<String> _kCategories = [
   'Pottery',
@@ -211,6 +212,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: const Text('✨ समीक्षा एवं पुष्टि (Review Listing)'),
         backgroundColor: AppTheme.primaryTerracotta,
       ),

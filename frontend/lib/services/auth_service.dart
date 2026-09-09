@@ -43,11 +43,19 @@ class AuthService {
   /// [email] — email address  
   /// [password] — min 6 characters (Firebase requirement)  
   /// [role] — "artisan" or "buyer"
+  /// Creates a new account and saves the user profile to Firestore.
+  ///
+  /// [name] — display name  
+  /// [email] — email address  
+  /// [password] — min 6 characters (Firebase requirement)  
+  /// [role] — "artisan" or "buyer"
+  /// [phoneNumber] — required phone number
   Future<UserModel> signUpWithEmail({
     required String name,
     required String email,
     required String password,
     required String role,
+    required String phoneNumber,
   }) async {
     // 1. Create Firebase Auth account
     final credential = await _auth.createUserWithEmailAndPassword(
@@ -68,9 +76,10 @@ class AuthService {
       name:  name.trim(),
       email: email.trim(),
       role:  role,
+      phone: phoneNumber.trim(),
     );
 
-    // 4. Save to Firestore "users" collection (safe fallback if firestore rules are locked)
+    // 4. Save to Firestore "users" collection
     try {
       await _firestore
           .collection('users')
@@ -81,6 +90,15 @@ class AuthService {
     }
 
     return userModel;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Password Reset
+  // ---------------------------------------------------------------------------
+
+  /// Sends a password reset email via Firebase Auth.
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
   // ---------------------------------------------------------------------------
@@ -99,6 +117,35 @@ class AuthService {
       password: password,
     );
     return credential.user!;
+  }
+
+  /// Searches Firestore "users" collection for a profile matching [phoneNumber].
+  Future<UserModel?> findUserByPhoneNumber(String phoneNumber) async {
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'\s+'), '').trim();
+    if (cleanPhone.isEmpty) return null;
+
+    // Check phone_number and phone fields
+    final query1 = await _firestore
+        .collection('users')
+        .where('phone_number', isEqualTo: cleanPhone)
+        .limit(1)
+        .get();
+
+    if (query1.docs.isNotEmpty) {
+      return UserModel.fromJson(query1.docs.first.data());
+    }
+
+    final query2 = await _firestore
+        .collection('users')
+        .where('phone', isEqualTo: cleanPhone)
+        .limit(1)
+        .get();
+
+    if (query2.docs.isNotEmpty) {
+      return UserModel.fromJson(query2.docs.first.data());
+    }
+
+    return null;
   }
 
   // ---------------------------------------------------------------------------

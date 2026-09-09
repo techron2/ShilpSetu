@@ -4,6 +4,7 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 import 'photo_capture_screen.dart';
 
 const List<String> _kCategories = [
@@ -123,6 +124,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Text(_isEditing ? '✏️ उत्पाद संपादित करें (Edit Product)' : 'Add New Product'),
       ),
       body: SafeArea(

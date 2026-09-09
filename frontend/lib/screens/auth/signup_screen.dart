@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../main_screen.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 
-/// Signup screen with name, email, password fields + role picker.
+/// Signup screen with name, email, password, phone fields + role picker.
 /// Role picker uses large card buttons — easy for low-digital-literacy users.
 class SignupScreen extends StatefulWidget {
   final VoidCallback? onSwitchToLogin;
@@ -20,6 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _phoneCtrl    = TextEditingController(text: '+91 ');
 
   String _selectedRole = 'artisan'; // default
   bool   _obscurePass  = true;
@@ -32,6 +35,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -43,10 +47,11 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _submit() async {
     final auth = context.read<AppAuthProvider>();
     final ok = await auth.signUp(
-      name:     _nameCtrl.text,
-      email:    _emailCtrl.text,
-      password: _passwordCtrl.text,
-      role:     _selectedRole,
+      name:        _nameCtrl.text,
+      email:       _emailCtrl.text,
+      password:    _passwordCtrl.text,
+      role:        _selectedRole,
+      phoneNumber: _phoneCtrl.text.replaceAll(RegExp(r'\s+'), '').trim(),
     );
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
     } else if (ok && mounted) {
       // Direct redirect to Home page (index 0) with all prior routes cleared
       context.read<NavigationProvider>().setIndex(0);
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainScreen()),
         (route) => false,
       );
@@ -73,8 +78,11 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Create Account'),
-        leading: BackButton(
+        leading: AppBackButton(
+          color: AppTheme.darkIndigo,
           onPressed: () {
             if (_showRolePicker) {
               setState(() => _showRolePicker = false);
@@ -99,14 +107,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // ── Step 1: Details form ─────────────────────────────────────────────────
   Widget _buildForm(AppAuthProvider auth) {
+    final lang = context.watch<LanguageProvider>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Tell us about yourself',
-            style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          lang.getText('signup_title'),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 6),
         Text(
-          'Step 1 of 2 — Enter your details',
+          lang.getText('step_1_sub'),
           style: Theme.of(context)
               .textTheme
               .bodyMedium
@@ -138,7 +150,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
                   decoration: _inputDec(
-                    label: 'Full Name',
+                    label: lang.getText('full_name'),
                     hint:  'Radha Devi',
                     icon:  Icons.person_outline_rounded,
                   ),
@@ -154,7 +166,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   decoration: _inputDec(
-                    label: 'Email Address',
+                    label: lang.getText('email'),
                     hint:  'your@email.com',
                     icon:  Icons.email_outlined,
                   ),
@@ -168,6 +180,29 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Phone Number (Required)
+                TextFormField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  decoration: _inputDec(
+                    label: '${lang.getText('phone')} (Required)',
+                    hint:  '+91 98765 43210',
+                    icon:  Icons.phone_outlined,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    final clean = v.replaceAll(RegExp(r'\s+'), '');
+                    if (clean.length < 10) {
+                      return 'Please enter a valid phone number with country code';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // Password
                 TextFormField(
                   controller: _passwordCtrl,
@@ -175,7 +210,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _goToRolePicker(),
                   decoration: _inputDec(
-                    label: 'Password (min 6 characters)',
+                    label: '${lang.getText('password')} (min 6 chars)',
                     hint:  '••••••••',
                     icon:  Icons.lock_outline_rounded,
                   ).copyWith(
@@ -198,7 +233,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ElevatedButton.icon(
                   onPressed: _goToRolePicker,
                   icon: const Icon(Icons.arrow_forward_rounded),
-                  label: const Text('Next: Choose Your Role'),
+                  label: Text(lang.getText('next_role')),
                 ),
                 const SizedBox(height: 20),
 
@@ -206,8 +241,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Already have an account? ",
-                        style: Theme.of(context).textTheme.bodyMedium),
                     GestureDetector(
                       onTap: () {
                         if (widget.onSwitchToLogin != null) {
@@ -217,11 +250,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         }
                       },
                       child: Text(
-                        'Log In',
+                        lang.getText('already_have_account'),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppTheme.primaryTerracotta,
-                              fontWeight: FontWeight.w700,
-                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.bold,
                             ),
                       ),
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 
@@ -163,12 +164,18 @@ class ProfileScreen extends StatelessWidget {
                   if (isSignedIn) {
                     await auth.signOut();
                     if (context.mounted) {
+                      context.read<NavigationProvider>().setIndex(0);
+                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const AuthGate()),
+                        (route) => false,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("सफलतापूर्वक लॉग आउट हो गए (Logged out)")),
                       );
                     }
                   } else {
-                    Navigator.of(context).pushAndRemoveUntil(
+                    context.read<NavigationProvider>().setIndex(0);
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const AuthGate()),
                       (route) => false,
                     );

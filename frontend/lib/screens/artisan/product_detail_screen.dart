@@ -4,6 +4,7 @@ import '../../models/product_model.dart';
 import '../../providers/product_provider.dart';
 import '../../services/product_service_factory.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 import 'add_product_screen.dart';
 
 /// Full Product Detail screen for artisans.
@@ -182,7 +183,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (_isLoading && _product == null) {
       return Scaffold(
         backgroundColor: AppTheme.bgParchment,
-        appBar: AppBar(title: const Text('उत्पाद विवरण (Product Detail)')),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: const Text('उत्पाद विवरण (Product Detail)'),
+        ),
         body: const Center(
           child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
         ),
@@ -192,7 +196,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (_product == null) {
       return Scaffold(
         backgroundColor: AppTheme.bgParchment,
-        appBar: AppBar(title: const Text('उत्पाद विवरण (Product Detail)')),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: const Text('उत्पाद विवरण (Product Detail)'),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -222,6 +229,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: const Text('उत्पाद विवरण (Product Detail)'),
         backgroundColor: AppTheme.primaryTerracotta,
         actions: [

@@ -4,6 +4,7 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_back_button.dart';
 import 'add_product_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -38,6 +39,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
+        leading: Navigator.canPop(context) ? const AppBackButton() : null,
         title: const Text('My Products'),
         actions: [
           IconButton(

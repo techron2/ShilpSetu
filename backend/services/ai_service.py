@@ -156,7 +156,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         """
 
         # Gemini 3.6 Flash is standard; maintain fallback candidates if needed
-        models_to_try = ["gemini-3.6-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
+        models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-1.5-flash"]
         response = None
         last_error = None
 

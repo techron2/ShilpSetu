@@ -69,11 +69,14 @@ class AppAuthProvider extends ChangeNotifier {
 
   /// Sign up with email/password and a chosen role.
   /// Returns `true` on success, `false` on error (check [errorMessage]).
+  /// Sign up with email/password, phone number, and a chosen role.
+  /// Returns `true` on success, `false` on error (check [errorMessage]).
   Future<bool> signUp({
     required String name,
     required String email,
     required String password,
     required String role,
+    required String phoneNumber,
   }) async {
     _setLoading(true);
     _setError(null);
@@ -83,7 +86,27 @@ class AppAuthProvider extends ChangeNotifier {
         email: email,
         password: password,
         role: role,
+        phoneNumber: phoneNumber,
       );
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(AuthService.friendlyError(e));
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      _setError('Unexpected error: $e');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Sends a password reset email via Firebase Auth.
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _authService.sendPasswordResetEmail(email);
       _setLoading(false);
       return true;
     } on FirebaseAuthException catch (e) {
@@ -115,6 +138,68 @@ class AppAuthProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       _setError('Unexpected error: $e');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Verifies phone credential and verifies existing Firestore account exists.
+  Future<bool> verifyAndSignInWithPhone({
+    required String phoneNumber,
+    required AuthCredential credential,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      // 1. Check if user exists in Firestore FIRST
+      final existingUser = await _authService.findUserByPhoneNumber(phoneNumber);
+      if (existingUser == null) {
+        _setError('No account found with this phone number. Please sign up first using email, or check the number entered.');
+        _setLoading(false);
+        return false;
+      }
+
+      // 2. Complete Auth sign in with Phone credential
+      final authResult = await FirebaseAuth.instance.signInWithCredential(credential);
+      if (authResult.user != null) {
+        _firebaseUser = authResult.user;
+        _userModel = existingUser;
+        _setLoading(false);
+        notifyListeners();
+        return true;
+      }
+
+      _setError('Phone verification failed. Please try again.');
+      _setLoading(false);
+      return false;
+    } on FirebaseAuthException catch (e) {
+      _setError(AuthService.friendlyError(e));
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      _setError('Phone login error: $e');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Direct manual phone login for testing/demo when account exists
+  Future<bool> signInWithExistingPhone(String phoneNumber) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      final existingUser = await _authService.findUserByPhoneNumber(phoneNumber);
+      if (existingUser == null) {
+        _setError('No account found with this phone number. Please sign up first using email, or check the number entered.');
+        _setLoading(false);
+        return false;
+      }
+      _userModel = existingUser;
+      _setLoading(false);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Error matching phone account: $e');
       _setLoading(false);
       return false;
     }
