@@ -70,7 +70,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       backgroundColor: AppTheme.bgParchment,
       body: CustomScrollView(
         slivers: [
-          // ── Decorative SliverAppBar ───────────────────────────────────────
+          // ── Decorative SliverAppBar ───────────────────────────────────
           SliverAppBar(
             expandedHeight: 170,
             pinned: true,
@@ -94,7 +94,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: Colors.white24,
                                 shape: BoxShape.circle,
                               ),
@@ -115,7 +115,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         const SizedBox(height: 8),
                         const Text(
                           'Discover authentic Indian handicrafts',
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
                         ),
                       ],
                     ),
@@ -137,18 +137,35 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       hintText: 'Search sarees, pottery, jewelry…',
                       hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                       prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryTerracotta),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_searchController.text.isNotEmpty)
+                            IconButton(
                               icon: const Icon(Icons.clear_rounded, size: 18),
                               onPressed: () {
                                 _searchController.clear();
                                 _loadAll();
-                              })
-                          : IconButton(
-                              icon: const Icon(Icons.tune_rounded,
-                                  color: AppTheme.secondaryOchre),
-                              onPressed: _search,
+                              },
                             ),
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryTerracotta,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Search',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
@@ -156,6 +173,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      // Override global theme for this specific search field (no label needed)
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
@@ -163,10 +189,10 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
             ),
           ),
 
-          // ── Category chips ───────────────────────────────────────────────
+          // ── Category chips ───────────────────────────────────────────
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 48,
+              height: 52,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -182,7 +208,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: selected ? AppTheme.primaryTerracotta : Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -212,7 +238,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
             ),
           ),
 
-          // ── Results header ────────────────────────────────────────────────
+          // ── Results header ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -243,7 +269,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
             ),
           ),
 
-          // ── Product grid ─────────────────────────────────────────────────
+          // ── Product grid ─────────────────────────────────────────────
           _isLoading && _products.isEmpty
               ? const SliverFillRemaining(
                   child: Center(
@@ -259,7 +285,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       sliver: SliverGrid(
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          childAspectRatio: 0.68,
+                          childAspectRatio: 0.72,   // slightly wider for content breathing room
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                         ),
@@ -279,23 +305,34 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryOchre.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              size: 56,
+              color: AppTheme.secondaryOchre,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
             'No products found',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade500,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkIndigo,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Try a different keyword or category',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
-          const SizedBox(height: 20),
-          TextButton.icon(
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('Show all products'),
             onPressed: _loadAll,
@@ -371,18 +408,19 @@ class _ProductCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Category badge — minimum 12px
                     if (category.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         margin: const EdgeInsets.only(bottom: 4),
                         decoration: BoxDecoration(
                           color: AppTheme.secondaryOchre.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           category,
                           style: const TextStyle(
-                            fontSize: 9,
+                            fontSize: 12,            // was 9 — fixed
                             fontWeight: FontWeight.w700,
                             color: AppTheme.secondaryOchre,
                           ),
@@ -400,6 +438,7 @@ class _ProductCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
+                    // Rating row — minimum 12px
                     Row(
                       children: [
                         const Icon(Icons.star_rounded,
@@ -408,14 +447,14 @@ class _ProductCard extends StatelessWidget {
                         Text(
                           rating.toStringAsFixed(1),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,            // was 11
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF4B5563),
                           ),
                         ),
                         const SizedBox(width: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFFE8F5E9),
                             borderRadius: BorderRadius.circular(4),
@@ -423,9 +462,9 @@ class _ProductCard extends StatelessWidget {
                           child: const Text(
                             '🛡️ Verified',
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2E7D32),
+                              color: AppTheme.successGreen,
                             ),
                           ),
                         ),
@@ -443,6 +482,7 @@ class _ProductCard extends StatelessWidget {
                             color: AppTheme.primaryTerracotta,
                           ),
                         ),
+                        // Cluster badge — raised to 11px
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
@@ -452,7 +492,11 @@ class _ProductCard extends StatelessWidget {
                           ),
                           child: const Text(
                             '🌿 Cluster',
-                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF8C6E14)),
+                            style: TextStyle(
+                              fontSize: 11,           // was 8 — fixed
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF8C6E14),
+                            ),
                           ),
                         ),
                       ],
@@ -475,10 +519,7 @@ class _ProductCard extends StatelessWidget {
           Icon(Icons.palette_rounded,
               size: 36, color: AppTheme.primaryTerracotta.withValues(alpha: 0.4)),
           const SizedBox(height: 4),
-          Text(
-            '🏺',
-            style: TextStyle(fontSize: 24),
-          ),
+          const Text('🏺', style: TextStyle(fontSize: 24)),
         ],
       ),
     );

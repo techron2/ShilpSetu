@@ -42,9 +42,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         leading: AppBackButton(color: AppTheme.darkIndigo),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Language / भाषा',
-          style: TextStyle(color: AppTheme.darkIndigo, fontWeight: FontWeight.bold),
+        title: Text(
+          lang.getText('choose_language'),
+          style: const TextStyle(color: AppTheme.darkIndigo, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(

@@ -20,17 +20,16 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
   @override
   void initState() {
     super.initState();
-    // Load products when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth    = context.read<AppAuthProvider>();
-      final artisanId = auth.firebaseUser?.uid ?? 'artisan_001'; // mock fallback
+      final artisanId = auth.currentArtisanId;
       context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
     });
   }
 
   Future<void> _refresh() async {
     final auth     = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? 'artisan_001';
+    final artisanId = auth.currentArtisanId;
     await context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
   }
 
@@ -135,78 +134,91 @@ class _ProductCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product image / placeholder
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: product.imageUrl.isNotEmpty
-                  ? Image.network(
-                      product.imageUrl,
-                      width: 88,
-                      height: 88,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) => _imagePlaceholder(),
-                    )
-                  : _imagePlaceholder(),
-            ),
-            const SizedBox(width: 14),
-
-            // Text info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontSize: 15),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  _chip(product.category),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        '₹${product.price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primaryTerracotta,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.inventory_2_outlined,
-                          size: 15,
-                          color: AppTheme.darkIndigo.withValues(alpha: 0.5)),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${product.stockQuantity} in stock',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ],
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Product image / placeholder
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: product.imageUrl.isNotEmpty
+                    ? Image.network(
+                        product.imageUrl,
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => _imagePlaceholder(),
+                      )
+                    : _imagePlaceholder(),
               ),
-            ),
+              const SizedBox(width: 14),
 
-            // Delete button
-            IconButton(
-              icon: Icon(Icons.delete_outline_rounded,
-                  color: Colors.redAccent.withValues(alpha: 0.8)),
-              onPressed: () => _confirmDelete(context),
-              tooltip: 'Delete',
-            ),
-          ],
+              // Text info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 5),
+                    _chip(product.category),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          '₹${product.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryTerracotta,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFC8E6C9)),
+                          ),
+                          child: Text(
+                            '${product.stockQuantity} in stock',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.successGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Delete button — min 44×44px tap target
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: AppTheme.warningRed),
+                  onPressed: () => _confirmDelete(context),
+                  tooltip: 'Delete',
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _imagePlaceholder() {
     return Container(
@@ -215,23 +227,24 @@ class _ProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.bgParchment,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderGrey),
       ),
       child: const Icon(Icons.image_outlined,
-          size: 36, color: AppTheme.secondaryOchre),
+          size: 34, color: AppTheme.secondaryOchre),
     );
   }
 
   Widget _chip(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.secondaryOchre.withValues(alpha: 0.15),
+        color: AppTheme.secondaryOchre.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: 12,
           color: AppTheme.secondaryOchre,
           fontWeight: FontWeight.w700,
         ),
@@ -243,8 +256,14 @@ class _ProductCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Product?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: AppTheme.warningRed),
+            SizedBox(width: 8),
+            Text('Delete Product?'),
+          ],
+        ),
         content: Text('Are you sure you want to delete "${product.title}"?'),
         actions: [
           TextButton(
@@ -252,7 +271,11 @@ class _ProductCard extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.warningRed,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(80, 44),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -267,8 +290,7 @@ class _ProductCard extends StatelessWidget {
           SnackBar(
             content: Text(ok ? 'Product deleted' : 'Could not delete product'),
             backgroundColor:
-                ok ? AppTheme.successGreen : Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
+                ok ? AppTheme.successGreen : AppTheme.warningRed,
           ),
         );
       }
@@ -289,26 +311,41 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 80,
-                color: AppTheme.secondaryOchre.withValues(alpha: 0.6)),
-            const SizedBox(height: 20),
-            Text('No products yet',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
+            Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryOchre.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.inventory_2_outlined,
+                  size: 60, color: AppTheme.secondaryOchre),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'अभी कोई उत्पाद नहीं\n(No products yet)',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.darkIndigo,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
               'Add your first handicraft product and start selling on ShilpSetu!',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppTheme.darkIndigo.withValues(alpha: 0.55)),
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add First Product'),
+              label: const Text('🏺 Add First Product'),
             ),
           ],
         ),
@@ -331,13 +368,20 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 64, color: Colors.redAccent),
-            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.warningRed.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline_rounded,
+                  size: 56, color: AppTheme.warningRed),
+            ),
+            const SizedBox(height: 20),
             Text(message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),

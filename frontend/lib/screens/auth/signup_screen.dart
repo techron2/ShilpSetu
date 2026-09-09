@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../main_screen.dart';
+import '../artisan/profile_completion_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 
@@ -46,12 +47,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _submit() async {
     final auth = context.read<AppAuthProvider>();
+    final lang = context.read<LanguageProvider>();
     final ok = await auth.signUp(
-      name:        _nameCtrl.text,
-      email:       _emailCtrl.text,
-      password:    _passwordCtrl.text,
-      role:        _selectedRole,
-      phoneNumber: _phoneCtrl.text.replaceAll(RegExp(r'\s+'), '').trim(),
+      name:               _nameCtrl.text,
+      email:              _emailCtrl.text,
+      password:           _passwordCtrl.text,
+      role:               _selectedRole,
+      phoneNumber:        _phoneCtrl.text.replaceAll(RegExp(r'\s+'), '').trim(),
+      languagePreference: lang.currentLanguageCode,
     );
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,25 +65,32 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       );
     } else if (ok && mounted) {
-      // Direct redirect to Home page (index 0) with all prior routes cleared
-      context.read<NavigationProvider>().setIndex(0);
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-        (route) => false,
-      );
+      if (_selectedRole == 'artisan') {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProfileCompletionScreen()),
+          (route) => false,
+        );
+      } else {
+        context.read<NavigationProvider>().setIndex(0);
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
+    final lang = context.watch<LanguageProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Create Account'),
+        title: Text(lang.getText('signup_title')),
         leading: AppBackButton(
           color: AppTheme.darkIndigo,
           onPressed: () {
@@ -269,14 +279,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // ── Step 2: Role picker ──────────────────────────────────────────────────
   Widget _buildRolePicker(AppAuthProvider auth) {
+    final lang = context.watch<LanguageProvider>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('What describes you?',
-            style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          lang.getText('role_title'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 6),
         Text(
-          'Step 2 of 2 — Choose your role',
+          lang.getText('step_2_sub'),
           style: Theme.of(context)
               .textTheme
               .bodyMedium
@@ -285,8 +299,8 @@ class _SignupScreenState extends State<SignupScreen> {
         const SizedBox(height: 32),
 
         _RoleCard(
-          title:       'I am an Artisan',
-          subtitle:    'I make and sell handcrafted products',
+          title:       lang.getText('role_artisan'),
+          subtitle:    lang.getText('role_artisan_desc'),
           icon:        Icons.handyman_rounded,
           value:       'artisan',
           groupValue:  _selectedRole,
@@ -295,8 +309,8 @@ class _SignupScreenState extends State<SignupScreen> {
         const SizedBox(height: 16),
 
         _RoleCard(
-          title:       'I am a Buyer',
-          subtitle:    'I want to discover and purchase crafts',
+          title:       lang.getText('role_buyer'),
+          subtitle:    lang.getText('role_buyer_desc'),
           icon:        Icons.shopping_bag_outlined,
           value:       'buyer',
           groupValue:  _selectedRole,
@@ -313,12 +327,12 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2.5),
                 )
-              : const Text('Create My Account'),
+              : Text(lang.getText('create_my_account_btn')),
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
-            'You can always change your role later in Profile settings.',
+            lang.getText('role_change_note'),
             textAlign: TextAlign.center,
             style: Theme.of(context)
                 .textTheme

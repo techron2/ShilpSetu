@@ -8,12 +8,16 @@ import 'package:frontend/screens/artisan/listing_review_screen.dart';
 import 'package:frontend/screens/artisan/business_assistant_screen.dart';
 import 'package:frontend/screens/main_screen.dart';
 
+import 'package:frontend/providers/language_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 Widget _buildTestableWidget(Widget child) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ChangeNotifierProvider(create: (_) => AppAuthProvider()),
       ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ChangeNotifierProvider(create: (_) => LanguageProvider()),
     ],
     child: MaterialApp(
       home: child,
@@ -22,6 +26,9 @@ Widget _buildTestableWidget(Widget child) {
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
   testWidgets('Test 1: ListingReviewScreen renders AI Suggested Price section with all inputs', (tester) async {
     await tester.pumpWidget(_buildTestableWidget(
       const ListingReviewScreen(

@@ -253,3 +253,186 @@ def process_voice_to_catalog(transcript: str, lang_code: str = "hi") -> dict:
         "category": category,
         "key_features": features
     }
+
+
+def _fallback_artisan_profile_extraction(transcript: str, lang_code: str = "hi") -> dict:
+    """Intelligent rule-based fallback for artisan profile extraction."""
+    t_lower = transcript.lower()
+
+    # 1. Name detection
+    name = ""
+    name_patterns = [
+        r"(?:मेरा नाम|my name is|माझे नाव|नाव)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)",
+        r"(?:मैं|i am|मी)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:हूँ|आहे|here)",
+    ]
+    for p in name_patterns:
+        m = re.search(p, transcript, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            if candidate.lower() not in ["एक", "कारीगर", "artisan", "शिल्पकार", "craftsman"]:
+                name = candidate
+                break
+
+    # 2. Gender detection
+    gender = "Other"
+    if any(w in t_lower for w in ["महिला", "स्त्री", "woman", "female", "she", "her", "देवी"]):
+        gender = "Female"
+    elif any(w in t_lower for w in ["पुरुष", "man", "male", "he", "him", "प्रजापति", "कुमार", "राम", "bhai"]):
+        gender = "Male"
+
+    # 3. Marital status detection
+    marital_status = "Married"
+    if any(w in t_lower for w in ["अविवाहित", "single", "unmarried", "कुंवारा"]):
+        marital_status = "Single"
+    elif any(w in t_lower for w in ["विवाहित", "married", "शादीशुदा", "लग्नाळू"]):
+        marital_status = "Married"
+
+    # 4. Experience detection
+    experience_years = 10
+    exp_m = re.search(r"(\d+)\s*(?:साल|वर्ष|वर्षे|years|yrs)", transcript, re.IGNORECASE)
+    if exp_m:
+        try:
+            experience_years = int(exp_m.group(1))
+        except Exception:
+            pass
+
+    # 5. Craft category
+    craft = "Handicrafts"
+    if any(w in t_lower for w in ["मिट्टी", "कुल्हड़", "pottery", "terracotta", "माती"]):
+        craft = "Terracotta Pottery"
+    elif any(w in t_lower for w in ["साड़ी", "कपड़ा", "textile", "cotton", "weaving", "वस्त्र"]):
+        craft = "Handloom & Textiles"
+    elif any(w in t_lower for w in ["चित्र", "मधुबनी", "painting", "art", "चित्रकला"]):
+        craft = "Folk Painting"
+    elif any(w in t_lower for w in ["धातु", "पीतल", "metal", "dhokra", "कांसा"]):
+        craft = "Metal Craft"
+    elif any(w in t_lower for w in ["लकड़ी", "wood", "carving", "काष्ठ"]):
+        craft = "Wood Carving"
+
+    # 6. Story synthesis
+    if len(transcript.strip()) > 40:
+        story = transcript.strip()
+    else:
+        if lang_code == "mr":
+            story = f"मी गेल्या {experience_years} वर्षांपासून पारंपारिक {craft} कलेमध्ये समर्पितपणे कार्यरत आहे. माझ्या पूर्वजांकडून मिळालेला हा वारसा मी अखंडपणे पुढे नेत असून, प्रत्येक उत्पादनात अस्सल हस्तकलेचे सौंदर्य जपण्याचा माझा प्रयत्न असतो."
+        elif lang_code == "hi":
+            story = f"मैं पिछले {experience_years} वर्षों से पारंपरिक {craft} शिल्पकला में समर्पित भाव से कार्यरत हूँ। यह कला मुझे अपने पूर्वजों से विरासत में मिली है, और मैं हर उत्पाद में भारतीय संस्कृति और हस्तशिल्प की प्रामाणिकता संजोने का प्रयास करता हूँ।"
+        else:
+            story = f"I have been dedicated to traditional {craft} for over {experience_years} years. Inheriting this sacred craft heritage from my ancestors, I pour heart and soul into every handmade piece to keep authentic artisan craftsmanship alive."
+
+    birth_year = max(1950, 2024 - (experience_years + 20))
+    dob = f"{birth_year}-01-01"
+
+    return {
+        "full_name": name,
+        "date_of_birth": dob,
+        "phone_number": "",
+        "gender": gender,
+        "marital_status": marital_status,
+        "experience_years": experience_years,
+        "craft_category": craft,
+        "story": story,
+        "artisan_story": story,
+    }
+
+
+def extract_profile_gemini(transcript: str, lang_code: str = "hi") -> dict:
+    """Extract structured artisan profile information using Google Gemini API."""
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        logger.info("GEMINI_API_KEY not configured. Using fallback profile extractor.")
+        return _fallback_artisan_profile_extraction(transcript, lang_code)
+
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key)
+
+        prompt = f"""
+        You are ShilpSetu AI, an expert cultural biographer and profile assistant empowering traditional Indian rural artisans.
+        An artisan spoke this natural audio introduction about themselves, their life, family, and craft:
+        "{transcript}"
+
+        Extract structured profile fields with high empathy, accuracy, and dignity:
+        1. "full_name": The artisan's real name (e.g. "Rameshwar Prajapati", "Radha Devi") or empty string if not mentioned.
+        2. "date_of_birth": Estimated date of birth in YYYY-MM-DD format based on age/experience, or empty string.
+        3. "phone_number": Phone number if mentioned, else empty string.
+        4. "gender": EXACTLY one of: "Male", "Female", "Other".
+        5. "marital_status": EXACTLY one of: "Married", "Single", "Other".
+        6. "experience_years": Estimated integer number of years working in their craft (default 10 if unclear).
+        7. "craft_category": Their primary craft specialization (e.g. "Terracotta Pottery", "Handloom Weaving", "Madhubani Painting", "Dhokra Metal", "Wood Carving").
+        8. "story": A rich, beautifully phrased 3 to 5 sentence first-person artisan story narrative describing their craft journey, heritage lineage, artistic techniques, and dedication to their craft. Formulate this primarily in the language the artisan spoke ({lang_code}).
+
+        Output ONLY valid JSON matching this schema:
+        {{
+            "full_name": "...",
+            "date_of_birth": "YYYY-MM-DD",
+            "phone_number": "...",
+            "gender": "...",
+            "marital_status": "...",
+            "experience_years": 10,
+            "craft_category": "...",
+            "story": "..."
+        }}
+        """
+
+        models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-1.5-flash"]
+        response = None
+        last_error = None
+
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    )
+                )
+                if response and response.text:
+                    break
+            except Exception as ex:
+                last_error = ex
+
+        if not response or not response.text:
+            raise RuntimeError(f"All Gemini models failed: {last_error}")
+
+        resp_text = response.text.strip()
+        if resp_text.startswith("```"):
+            resp_text = re.sub(r"^```(?:json)?", "", resp_text)
+            resp_text = re.sub(r"```$", "", resp_text).strip()
+
+        parsed = json.loads(resp_text)
+        story = parsed.get("story") or transcript
+        return {
+            "full_name": parsed.get("full_name", ""),
+            "date_of_birth": parsed.get("date_of_birth", ""),
+            "phone_number": parsed.get("phone_number", ""),
+            "gender": parsed.get("gender", "Other"),
+            "marital_status": parsed.get("marital_status", "Married"),
+            "experience_years": int(parsed.get("experience_years", 10)),
+            "craft_category": parsed.get("craft_category", "Handicrafts"),
+            "story": story,
+            "artisan_story": story,
+        }
+
+    except Exception as e:
+        logger.warning(f"Gemini profile extraction failed ({e}). Using intelligent fallback.")
+        return _fallback_artisan_profile_extraction(transcript, lang_code)
+
+
+def process_voice_to_profile(transcript: str, lang_code: str = "hi") -> dict:
+    """Full Voice-to-Profile pipeline: transcribes & extracts structured profile fields."""
+    if not transcript or not transcript.strip():
+        return {
+            "success": False,
+            "error": "Empty transcript provided",
+            "friendly_error": "कृपया पहले बोलकर अपना परिचय दें (Please speak to record your details)"
+        }
+
+    extracted = extract_profile_gemini(transcript, lang_code)
+    extracted["success"] = True
+    extracted["transcript"] = transcript
+    return extracted
+

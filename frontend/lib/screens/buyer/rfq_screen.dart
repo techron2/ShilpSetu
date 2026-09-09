@@ -214,18 +214,33 @@ class _RfqScreenState extends State<RfqScreen> {
 
             const SizedBox(height: 12),
 
-            // Quick suggestion chips
+            // Quick suggestion chips — branded ochre style
             Wrap(
               spacing: 8,
-              runSpacing: 6,
+              runSpacing: 8,
               children: _suggestions.map((s) {
                 final short = s.length > 40 ? '${s.substring(0, 40)}…' : s;
-                return ActionChip(
-                  label: Text(short,
-                      style: const TextStyle(fontSize: 11)),
-                  onPressed: () => _controller.text = s,
-                  backgroundColor: Colors.white,
-                  side: const BorderSide(color: AppTheme.borderGrey),
+                return InkWell(
+                  onTap: () => setState(() => _controller.text = s),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryOchre.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.secondaryOchre.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      short,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8C6E14),
+                      ),
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -334,13 +349,32 @@ class _RfqScreenState extends State<RfqScreen> {
                   onPressed: () => setState(() { _parsedRfq = null; _confirmed = false; }),
                 ),
               ] else if (_isLoading) ...[
-                const Center(
-                  child: Column(
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderGrey),
+                  ),
+                  child: const Column(
                     children: [
                       CircularProgressIndicator(color: AppTheme.primaryTerracotta),
-                      SizedBox(height: 12),
-                      Text('Finding best matching artisans…',
-                          style: TextStyle(color: Color(0xFF6B7280))),
+                      SizedBox(height: 16),
+                      Text(
+                        'Finding best matching artisans…',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.darkIndigo,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Matching your requirement with our artisan network',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
                     ],
                   ),
                 ),

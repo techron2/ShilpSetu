@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 import 'buyer_product_detail_screen.dart';
-import 'chat_screen.dart';
 
 /// Side-by-side supplier/product comparison screen.
 /// Shows up to 3 matched artisans from the /api/matching/buyer-supplier endpoint.
@@ -208,7 +205,6 @@ class _SupplierCard extends StatelessWidget {
     final name      = artisan['name']?.toString() ?? 'Artisan';
     final region    = artisan['region']?.toString() ?? '';
     final rating    = (artisan['rating'] as num?)?.toDouble() ?? 4.0;
-    final artisanId = artisan['id']?.toString() ?? '';
 
     return Container(
       margin: highlighted ? const EdgeInsets.only(bottom: 4) : EdgeInsets.zero,
@@ -355,67 +351,26 @@ class _SupplierCard extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 34,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BuyerProductDetailScreen(product: product),
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryTerracotta,
-                            foregroundColor: Colors.white,
-                            minimumSize: Size.zero,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                          ),
-                          child: const Text('View'),
-                        ),
+                // Action button
+                SizedBox(
+                  width: double.infinity,
+                  height: 36,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BuyerProductDetailScreen(product: product),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: SizedBox(
-                        height: 34,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            final user = context.read<AppAuthProvider>().userModel;
-                            if (user == null || artisanId.isEmpty) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  currentUserId: user.uid,
-                                  currentUserName: user.name,
-                                  otherUserId: artisanId,
-                                  otherUserName: name,
-                                  isCurrentUserArtisan: false,
-                                ),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: Size.zero,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            side: const BorderSide(color: AppTheme.inTransitBlue),
-                            foregroundColor: AppTheme.inTransitBlue,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                          ),
-                          child: const Text('Chat'),
-                        ),
-                      ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryTerracotta,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                     ),
-                  ],
+                    child: const Text('View Product'),
+                  ),
                 ),
               ],
             ),

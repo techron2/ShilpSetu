@@ -28,6 +28,19 @@ class AppAuthProvider extends ChangeNotifier {
   String?    get errorMessage  => _errorMessage;
   bool       get isSignedIn    => _firebaseUser != null;
 
+  /// Active artisan UID: signed-in UID -> user profile UID -> fallback demo artisan UID
+  String get currentArtisanId {
+    if (Firebase.apps.isNotEmpty) {
+      try {
+        final fbUid = FirebaseAuth.instance.currentUser?.uid;
+        if (fbUid != null && fbUid.isNotEmpty) return fbUid;
+      } catch (_) {}
+    }
+    if (_firebaseUser?.uid != null && _firebaseUser!.uid.isNotEmpty) return _firebaseUser!.uid;
+    if (_userModel?.uid != null && _userModel!.uid.isNotEmpty) return _userModel!.uid;
+    return 'XatExY7HGxd71WbhBoHiF7wMuVm2';
+  }
+
   AppAuthProvider() {
     // Only subscribe to auth changes when Firebase is actually initialized.
     // In placeholder mode (no real credentials), this is a no-op.
@@ -65,6 +78,23 @@ class AppAuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates local user model in state and notifies listeners
+  void updateUserModel(UserModel model) {
+    _userModel = model;
+    notifyListeners();
+  }
+
+  /// Re-fetches the user document from Firestore to refresh state
+  Future<void> refreshUser() async {
+    final uid = _firebaseUser?.uid ?? _userModel?.uid;
+    if (uid != null && uid.isNotEmpty) {
+      try {
+        _userModel = await _authService.fetchUserModel(uid);
+        notifyListeners();
+      } catch (_) {}
+    }
+  }
+
   // ── Public actions ────────────────────────────────────────────────────────
 
   /// Sign up with email/password and a chosen role.
@@ -77,6 +107,7 @@ class AppAuthProvider extends ChangeNotifier {
     required String password,
     required String role,
     required String phoneNumber,
+    String? languagePreference,
   }) async {
     _setLoading(true);
     _setError(null);
@@ -87,6 +118,7 @@ class AppAuthProvider extends ChangeNotifier {
         password: password,
         role: role,
         phoneNumber: phoneNumber,
+        languagePreference: languagePreference,
       );
       _setLoading(false);
       return true;

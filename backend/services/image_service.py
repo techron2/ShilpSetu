@@ -417,9 +417,31 @@ def enhance_product_image(image_bytes: bytes, target_size=(1080, 1080), prefer_g
         )
         _generate_comparison_image(orig_img, final_studio, local_comp_path, after_label=label)
 
+        # Save raw original image as well so artisan can choose original version
+        raw_filename = f"raw_{uid}.jpg"
+        raw_local_path = os.path.join(ENHANCED_DIR, raw_filename)
+        with open(raw_local_path, "wb") as f:
+            f.write(image_bytes)
+
+        orig_public_url = None
+        if firebase_app:
+            try:
+                from firebase_admin import storage
+                bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET")
+                bucket = storage.bucket(bucket_name, app=firebase_app)
+                blob = bucket.blob(f"products/{raw_filename}")
+                blob.upload_from_string(image_bytes, content_type="image/jpeg")
+                blob.make_public()
+                orig_public_url = blob.public_url
+            except Exception as fb_err:
+                logger.warning(f"Firebase Storage upload of raw image failed: {fb_err}")
+
         port = int(os.getenv("PORT", 5000))
         if not public_url:
             public_url = f"http://127.0.0.1:{port}/static/enhanced/{filename}"
+
+        if not orig_public_url:
+            orig_public_url = f"http://127.0.0.1:{port}/static/enhanced/{raw_filename}"
 
         comp_url = f"http://127.0.0.1:{port}/static/enhanced/{comp_filename}"
 
@@ -427,6 +449,7 @@ def enhance_product_image(image_bytes: bytes, target_size=(1080, 1080), prefer_g
             "success": True,
             "engine": engine_used,
             "image_url": public_url,
+            "original_image_url": orig_public_url,
             "comparison_url": comp_url,
             "filename": filename,
             "comparison_filename": comp_filename,

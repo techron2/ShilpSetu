@@ -60,6 +60,54 @@ class AiCatalogService {
     }
   }
 
+  /// Uploads raw/original image bytes to backend / storage without enhancement.
+  Future<Map<String, dynamic>> uploadRawImage({
+    required List<int> imageBytes,
+    String filename = 'craft.jpg',
+  }) async {
+    if (ApiConfig.useMock) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return {
+        'success': true,
+        'image_url': 'https://images.unsplash.com/photo-1615865417491-9941019fbc00?w=800',
+        'filename': filename,
+      };
+    }
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/products/upload-image');
+      final request = http.MultipartRequest('POST', uri);
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: filename,
+        ),
+      );
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final responseBody = await streamedResponse.stream.bytesToString();
+      final data = jsonDecode(responseBody) as Map<String, dynamic>;
+
+      if (streamedResponse.statusCode == 200 && (data['success'] == true)) {
+        return data;
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Image upload failed',
+          'friendly_error': data['friendly_error'] ?? 'फोटो अपलोड करने में समस्या आई',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error calling /api/products/upload-image: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+        'friendly_error': 'सर्वर से संपर्क नहीं हो सका (Could not reach server)',
+      };
+    }
+  }
+
   /// Sends recorded audio bytes or transcript to the backend for transcription,
   /// structured extraction via Gemini AI, and bilingual translation.
   Future<Map<String, dynamic>> voiceToListing({

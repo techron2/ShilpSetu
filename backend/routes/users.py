@@ -84,34 +84,54 @@ def get_user(uid):
 
 
 # ---------------------------------------------------------------------------
-# PUT /api/users/<uid> — Update user profile
+# PUT /api/users/<uid> and PUT /api/users/<uid>/profile — Update user profile
 # ---------------------------------------------------------------------------
 @users_bp.route('/<uid>', methods=['PUT'])
+@users_bp.route('/<uid>/profile', methods=['PUT', 'POST'])
 def update_user(uid):
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Request body must be JSON"}), 400
 
-    allowed_fields = ['name', 'phone', 'language_preference', 'artisan_cluster', 'region', 'role']
+    allowed_fields = [
+        'name', 'phone', 'phone_number', 'language_preference', 'artisan_cluster',
+        'region', 'role', 'date_of_birth', 'gender', 'marital_status',
+        'experience_years', 'story', 'artisan_story', 'profile_photo_url',
+        'cover_photo_url', 'is_profile_completed', 'craft_category'
+    ]
     updates = {k: v for k, v in data.items() if k in allowed_fields}
 
     if not updates:
         return jsonify({"success": False, "error": "No valid fields to update"}), 400
 
+    # Ensure consistency between story and artisan_story, phone and phone_number
+    if 'story' in updates and 'artisan_story' not in updates:
+        updates['artisan_story'] = updates['story']
+    elif 'artisan_story' in updates and 'story' not in updates:
+        updates['story'] = updates['artisan_story']
+
+    if 'phone' in updates and 'phone_number' not in updates:
+        updates['phone_number'] = updates['phone']
+    elif 'phone_number' in updates and 'phone' not in updates:
+        updates['phone'] = updates['phone_number']
+
     db = get_firestore_client()
     if db:
         try:
             ref = db.collection('users').document(uid)
-            if not ref.get().exists:
-                return jsonify({"success": False, "error": "User not found"}), 404
-            ref.update(updates)
+            doc_snap = ref.get()
+            if not doc_snap.exists:
+                updates['uid'] = uid
+                ref.set(updates, merge=True)
+            else:
+                ref.update(updates)
             updated = ref.get().to_dict()
             return jsonify({"success": True, "source": "firestore", "user": updated}), 200
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
 
     if uid not in _MOCK_USERS:
-        return jsonify({"success": False, "error": "User not found"}), 404
+        _MOCK_USERS[uid] = {"uid": uid}
     _MOCK_USERS[uid].update(updates)
     return jsonify({"success": True, "source": "mock", "user": _MOCK_USERS[uid]}), 200
 

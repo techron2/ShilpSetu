@@ -11,6 +11,7 @@ from .passport import passport_bp, _HTML_TEMPLATE, _build_passport_payload
 from .analytics import analytics_bp
 from .promo import promo_bp
 from .clusters import clusters_bp
+from .profile import profile_bp
 from flask import render_template_string
 
 
@@ -21,6 +22,7 @@ def register_routes(app):
     app.register_blueprint(orders_bp,    url_prefix='/api/orders')
     app.register_blueprint(products_bp,  url_prefix='/api/products')
     app.register_blueprint(users_bp,     url_prefix='/api/users')
+    app.register_blueprint(profile_bp,   url_prefix='/api/profile')
     app.register_blueprint(pricing_bp,   url_prefix='/api/pricing')
     app.register_blueprint(assistant_bp, url_prefix='/api/assistant')
     app.register_blueprint(matching_bp,  url_prefix='/api/matching')

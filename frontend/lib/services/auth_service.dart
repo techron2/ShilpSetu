@@ -56,6 +56,7 @@ class AuthService {
     required String password,
     required String role,
     required String phoneNumber,
+    String? languagePreference,
   }) async {
     // 1. Create Firebase Auth account
     final credential = await _auth.createUserWithEmailAndPassword(
@@ -72,11 +73,12 @@ class AuthService {
 
     // 3. Build Firestore profile document
     final userModel = UserModel(
-      uid:   user.uid,
-      name:  name.trim(),
-      email: email.trim(),
-      role:  role,
-      phone: phoneNumber.trim(),
+      uid:                user.uid,
+      name:               name.trim(),
+      email:              email.trim(),
+      role:               role,
+      phone:              phoneNumber.trim(),
+      languagePreference: languagePreference ?? 'hi',
     );
 
     // 4. Save to Firestore "users" collection

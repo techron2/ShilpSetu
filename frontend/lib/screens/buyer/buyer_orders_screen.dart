@@ -5,7 +5,6 @@ import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
-import 'chat_screen.dart';
 
 /// Orders screen for buyers — fetches from backend REST API.
 class BuyerOrdersScreen extends StatefulWidget {
@@ -60,7 +59,7 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
         leading: Navigator.canPop(context) ? const AppBackButton() : null,
-        title: const Text('📦 My Orders'),
+        title: const Text('My Orders'),
         backgroundColor: AppTheme.primaryTerracotta,
         foregroundColor: Colors.white,
         actions: [
@@ -91,8 +90,9 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
                     labelStyle: TextStyle(
                       color: selected ? Colors.white : const Color(0xFF4B5563),
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 13,
                     ),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                     backgroundColor: Colors.white,
                     side: BorderSide(
                       color: selected ? AppTheme.primaryTerracotta : AppTheme.borderGrey,
@@ -129,17 +129,36 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_rounded, size: 72, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryOchre.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.inbox_rounded,
+              size: 60,
+              color: AppTheme.secondaryOchre,
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
-            _filterStatus == 'all' ? 'No orders yet' : 'No $_filterStatus orders',
+            _filterStatus == 'all'
+                ? 'अभी कोई ऑर्डर नहीं\n(No orders yet)'
+                : 'No $_filterStatus orders',
+            textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkIndigo,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Browse products and place your first order!',
-            style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
         ],
       ),
@@ -265,56 +284,53 @@ class _OrderCard extends StatelessWidget {
             const Divider(height: 1, color: AppTheme.borderGrey),
             const SizedBox(height: 10),
 
-            // Price + date + chat button
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '₹${order.totalPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.primaryTerracotta,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '(${order.quantity} unit${order.quantity > 1 ? 's' : ''})',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                ),
-                const Spacer(),
-                // Chat button
-                SizedBox(
-                  height: 32,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.chat_rounded, size: 14),
-                    label: const Text('Chat', style: TextStyle(fontSize: 12)),
-                    onPressed: order.artisanId.isNotEmpty
-                        ? () {
-                            final user = context.read<AppAuthProvider>().userModel;
-                            if (user == null) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  currentUserId: user.uid,
-                                  currentUserName: user.name,
-                                  otherUserId: order.artisanId,
-                                  otherUserName: order.artisanName.isNotEmpty
-                                      ? order.artisanName
-                                      : 'Artisan',
-                                  isCurrentUserArtisan: false,
-                                ),
-                              ),
-                            );
-                          }
-                        : null,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      side: const BorderSide(color: AppTheme.inTransitBlue),
-                      foregroundColor: AppTheme.inTransitBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '₹${order.totalPrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primaryTerracotta,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 14, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${order.quantity} unit${order.quantity > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

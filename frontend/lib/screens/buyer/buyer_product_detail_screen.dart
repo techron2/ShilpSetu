@@ -595,40 +595,26 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Action Buttons ──────────────────────────────────────────────
+                  // ── Action Buttons (clear visual hierarchy) ─────────────
+
+                  // PRIMARY: Order Now — most important action, full green
                   ElevatedButton.icon(
                     icon: _orderingNow
                         ? const SizedBox(
-                            width: 18, height: 18,
+                            width: 20, height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.shopping_cart_checkout_rounded),
-                    label: Text(_orderingNow ? 'Placing Order…' : '🛒 Order Now'),
+                                strokeWidth: 2.5, color: Colors.white))
+                        : const Icon(Icons.shopping_cart_checkout_rounded, size: 22),
+                    label: Text(
+                      _orderingNow ? 'Placing Order…' : '🛒 Order Now',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    ),
                     onPressed: _orderingNow || stock == 0 ? null : _placeOrder,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.successGreen,
-                      foregroundColor: Colors.white,
-                    ),
+                    style: AppTheme.successButtonStyle,
                   ),
                   const SizedBox(height: 12),
 
-                  // WhatsApp AI Promo Share Button
-                  ElevatedButton.icon(
-                    icon: _isGeneratingPromo
-                        ? const SizedBox(
-                            width: 18, height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Icon(Icons.chat_bubble_outline_rounded),
-                    label: Text(_isGeneratingPromo ? 'Generating AI Caption…' : '📲 Share to WhatsApp (AI Promo)'),
-                    onPressed: _isGeneratingPromo ? null : _shareToWhatsApp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
+                  // SECONDARY: Request Quote
                   OutlinedButton.icon(
                     icon: const Icon(Icons.request_quote_rounded),
                     label: const Text('📋 Request Quote (RFQ)'),
@@ -639,37 +625,78 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.compare_arrows_rounded),
-                    label: const Text('🔍 Find & Compare Suppliers'),
-                    onPressed: () async {
-                      final nav = Navigator.of(context);
-                      final matches = await BuyerService.instance.matchSuppliers(
-                        category: category,
-                        quantity: _quantity,
-                        budget: price * _quantity * 2,
-                        region: region,
-                      );
-                      if (!mounted) return;
-                      nav.push(
-                        MaterialPageRoute(
-                          builder: (_) => SupplierComparisonScreen(
-                            matches: matches,
-                            requirement: {
-                              'category': category,
-                              'quantity': _quantity,
-                              'budget': price * _quantity * 2,
-                            },
+                  // TERTIARY row: Share + Compare (smaller, equal weight)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: _isGeneratingPromo
+                              ? const SizedBox(
+                                  width: 16, height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF25D366), strokeWidth: 2),
+                                )
+                              : const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                          label: Text(
+                            _isGeneratingPromo ? 'Generating…' : '📲 Share',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: _isGeneratingPromo ? null : _shareToWhatsApp,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF25D366),
+                            side: const BorderSide(color: Color(0xFF25D366), width: 1.8),
+                            minimumSize: const Size(0, 48),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                         ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.inTransitBlue,
-                      side: const BorderSide(color: AppTheme.inTransitBlue, width: 2),
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.compare_arrows_rounded, size: 18),
+                          label: const Text(
+                            '🔍 Compare',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: () async {
+                            final nav = Navigator.of(context);
+                            final matches = await BuyerService.instance.matchSuppliers(
+                              category: category,
+                              quantity: _quantity,
+                              budget: price * _quantity * 2,
+                              region: region,
+                            );
+                            if (!mounted) return;
+                            nav.push(
+                              MaterialPageRoute(
+                                builder: (_) => SupplierComparisonScreen(
+                                  matches: matches,
+                                  requirement: {
+                                    'category': category,
+                                    'quantity': _quantity,
+                                    'budget': price * _quantity * 2,
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.inTransitBlue,
+                            side: const BorderSide(color: AppTheme.inTransitBlue, width: 1.8),
+                            minimumSize: const Size(0, 48),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
 
@@ -738,13 +765,13 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            // QR Code
+                            // QR Code — thicker border for clarity
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE5DDD5)),
+                                border: Border.all(color: const Color(0xFFD4AF37), width: 2),
                               ),
                               child: QrImageView(
                                 data: passportUrl,
@@ -794,17 +821,27 @@ class _QuantityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled = onPressed != null;
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 36,
-        height: 36,
+        width: 44,   // minimum 44×44px tap target
+        height: 44,
         decoration: BoxDecoration(
-          border: Border.all(color: AppTheme.borderGrey),
-          borderRadius: BorderRadius.circular(8),
+          color: isEnabled
+              ? AppTheme.primaryTerracotta.withValues(alpha: 0.08)
+              : AppTheme.bgParchment,
+          border: Border.all(
+            color: isEnabled ? AppTheme.primaryTerracotta.withValues(alpha: 0.4) : AppTheme.borderGrey,
+          ),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 18, color: AppTheme.darkIndigo),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isEnabled ? AppTheme.primaryTerracotta : const Color(0xFFB0BAC8),
+        ),
       ),
     );
   }

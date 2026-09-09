@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
@@ -32,7 +33,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final user = Provider.of<AppAuthProvider>(context, listen: false).userModel;
-    final aid = widget.artisanId ?? user?.uid ?? 'artisan_demo_01';
+    final fbUid = FirebaseAuth.instance.currentUser?.uid;
+    final aid = widget.artisanId ??
+        (fbUid != null && fbUid.isNotEmpty ? fbUid : null) ??
+        user?.uid ??
+        'XatExY7HGxd71WbhBoHiF7wMuVm2';
 
     final results = await Future.wait([
       BuyerService.instance.getAnalyticsSummary(aid),

@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/buyer_service.dart';
 import '../theme/app_theme.dart';
-import 'buyer/chat_screen.dart';
 
 /// Orders screen for artisans — real-time Firestore stream filtered by artisan_id.
 /// Also provides status update actions (confirm, mark shipped, etc.)
@@ -19,23 +20,20 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   String _filterStatus = 'all';
 
-  static const List<Map<String, String>> _statusFilters = [
-    {'key': 'all',       'label': 'All'},
-    {'key': 'pending',   'label': '⏳ Pending'},
-    {'key': 'confirmed', 'label': '✅ Confirmed'},
-    {'key': 'shipped',   'label': '🚚 Shipped'},
-    {'key': 'delivered', 'label': '📦 Delivered'},
-    {'key': 'paid',      'label': '💰 Paid'},
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AppAuthProvider>().userModel;
-    if (user == null) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
-    }
+    final auth = context.watch<AppAuthProvider>();
+    final lang = context.watch<LanguageProvider>();
+    final artisanId = auth.currentArtisanId;
 
-    final artisanId = user.uid;
+    final statusFilters = [
+      {'key': 'all',       'label': lang.getText('order_filter_all')},
+      {'key': 'pending',   'label': lang.getText('order_filter_pending')},
+      {'key': 'confirmed', 'label': lang.getText('order_filter_confirmed')},
+      {'key': 'shipped',   'label': lang.getText('order_filter_shipped')},
+      {'key': 'delivered', 'label': lang.getText('order_filter_delivered')},
+      {'key': 'paid',      'label': lang.getText('order_filter_paid')},
+    ];
 
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
@@ -47,7 +45,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              children: _statusFilters.map((f) {
+              children: statusFilters.map((f) {
                 final selected = f['key'] == _filterStatus;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -59,8 +57,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     labelStyle: TextStyle(
                       color: selected ? Colors.white : const Color(0xFF4B5563),
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 13,
                     ),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                     backgroundColor: Colors.white,
                     side: BorderSide(
                       color: selected ? AppTheme.primaryTerracotta : AppTheme.borderGrey,
@@ -71,24 +70,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
           ),
 
-          // Real-time orders stream from Firestore
+          // Real-time orders stream from Firestore (or REST fallback if Firebase not initialized)
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('orders')
-                  .where('artisan_id', isEqualTo: artisanId)
-                  .orderBy('created_at', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
-                }
+            child: Firebase.apps.isEmpty
+                ? _RestFallbackOrders(artisanId: artisanId, filter: _filterStatus)
+                : StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('orders')
+                        .where('artisan_id', isEqualTo: artisanId)
+                        .orderBy('created_at', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
+                      }
 
-                if (snapshot.hasError) {
-                  // Fallback: try REST API if Firestore stream fails (e.g. missing index)
-                  return _RestFallbackOrders(artisanId: artisanId, filter: _filterStatus);
-                }
+                      if (snapshot.hasError) {
+                        // Fallback: try REST API if Firestore stream fails (e.g. missing index)
+                        return _RestFallbackOrders(artisanId: artisanId, filter: _filterStatus);
+                      }
 
                 var orders = (snapshot.data?.docs ?? [])
                     .map((doc) {
@@ -129,9 +130,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'You have $pendingCount pending order${pendingCount > 1 ? 's' : ''} to confirm!',
+                                    lang.getText('order_pending_banner').replaceAll('{count}', pendingCount.toString()),
                                     style: const TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFFE65100),
                                     ),
@@ -162,20 +163,38 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _emptyState() {
+    final lang = context.watch<LanguageProvider>();
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_rounded, size: 72, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          const Text(
-            'No orders yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryOchre.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.inbox_rounded,
+              size: 60,
+              color: AppTheme.secondaryOchre,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            lang.getText('order_no_orders'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkIndigo,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Orders from buyers will appear here',
-            style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+          Text(
+            lang.getText('orders_empty_desc'),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
         ],
       ),
@@ -313,7 +332,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                 const Icon(Icons.person_outline, size: 14, color: Color(0xFF6B7280)),
                 const SizedBox(width: 5),
                 Text(
-                  'खरीदार: ${order.buyerName.isNotEmpty ? order.buyerName : "—"}',
+                  '${context.watch<LanguageProvider>().getText('order_buyer_label')}: ${order.buyerName.isNotEmpty ? order.buyerName : "—"}',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
                 ),
               ],
@@ -323,7 +342,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
               children: [
                 const Icon(Icons.inventory_2_rounded, size: 14, color: Color(0xFF6B7280)),
                 const SizedBox(width: 5),
-                Text('Qty: ${order.quantity}',
+                Text('${context.watch<LanguageProvider>().getText('order_qty_label')}: ${order.quantity}',
                     style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
                 const SizedBox(width: 16),
                 if (order.deliveryAddress.isNotEmpty) ...[
@@ -345,47 +364,52 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
             const Divider(height: 1, color: AppTheme.borderGrey),
             const SizedBox(height: 10),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '₹${order.totalPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w900,
-                    color: AppTheme.primaryTerracotta),
-                ),
-                const Spacer(),
-                // Chat button
-                SizedBox(
-                  height: 32,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.chat_rounded, size: 14),
-                    label: const Text('Chat', style: TextStyle(fontSize: 12)),
-                    onPressed: order.buyerId.isNotEmpty
-                        ? () {
-                            final user = context.read<AppAuthProvider>().userModel;
-                            if (user == null) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  currentUserId: user.uid,
-                                  currentUserName: user.name,
-                                  otherUserId: order.buyerId,
-                                  otherUserName: order.buyerName.isNotEmpty
-                                      ? order.buyerName : 'Buyer',
-                                  isCurrentUserArtisan: true,
-                                ),
-                              ),
-                            );
-                          }
-                        : null,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      side: const BorderSide(color: AppTheme.inTransitBlue),
-                      foregroundColor: AppTheme.inTransitBlue,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.watch<LanguageProvider>().getText('order_total_amount'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '₹${order.totalPrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primaryTerracotta,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 14, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${order.quantity} unit${order.quantity > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -395,7 +419,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
             if (!_updating && order.status != 'delivered' && order.status != 'paid' &&
                 order.status != 'cancelled') ...[
               const SizedBox(height: 12),
-              _actionButtons(order.status),
+              _actionButtons(context, order.status),
             ] else if (_updating) ...[
               const SizedBox(height: 12),
               const Center(
@@ -412,7 +436,8 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
     );
   }
 
-  Widget _actionButtons(String currentStatus) {
+  Widget _actionButtons(BuildContext context, String currentStatus) {
+    final lang = context.watch<LanguageProvider>();
     final nextStatus = {
       'pending':   'confirmed',
       'confirmed': 'shipped',
@@ -420,9 +445,9 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
     }[currentStatus];
 
     final nextLabel = {
-      'pending':   '✅ Confirm Order',
-      'confirmed': '🚚 Mark Shipped',
-      'shipped':   '📦 Mark Delivered',
+      'pending':   '✅ ${lang.getText('order_confirm_btn')}',
+      'confirmed': '🚚 ${lang.getText('order_ship_btn')}',
+      'shipped':   '📦 ${lang.getText('order_deliver_btn')}',
     }[currentStatus];
 
     if (nextStatus == null) return const SizedBox.shrink();

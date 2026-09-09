@@ -206,6 +206,62 @@ def enhance_image_endpoint():
 
 
 # ---------------------------------------------------------------------------
+# POST /api/products/upload-image — Raw image upload to storage (Firebase / local)
+# ---------------------------------------------------------------------------
+@products_bp.route('/upload-image', methods=['POST'])
+def upload_image_endpoint():
+    file = request.files.get('image') or request.files.get('file')
+    if not file:
+        return jsonify({
+            "success": False,
+            "error": "No image file provided in form-data ('image' or 'file')",
+            "friendly_error": "कृपया उत्पाद की फोटो चुनें (Please select a product photo)"
+        }), 400
+
+    try:
+        import os, uuid
+        from services.firebase_service import get_firebase_app
+        image_bytes = file.read()
+        if len(image_bytes) == 0:
+            return jsonify({"success": False, "error": "Empty file received"}), 400
+
+        uid = uuid.uuid4().hex[:12]
+        filename = f"raw_{uid}.jpg"
+        static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "enhanced")
+        os.makedirs(static_dir, exist_ok=True)
+
+        local_path = os.path.join(static_dir, filename)
+        with open(local_path, "wb") as f:
+            f.write(image_bytes)
+
+        public_url = None
+        firebase_app = get_firebase_app()
+        if firebase_app:
+            try:
+                from firebase_admin import storage
+                bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET")
+                bucket = storage.bucket(bucket_name, app=firebase_app)
+                blob = bucket.blob(f"products/{filename}")
+                blob.upload_from_string(image_bytes, content_type="image/jpeg")
+                blob.make_public()
+                public_url = blob.public_url
+            except Exception as fb_err:
+                logger.warning(f"Firebase Storage upload of raw image failed: {fb_err}")
+
+        port = int(os.getenv("PORT", 5000))
+        if not public_url:
+            public_url = f"http://127.0.0.1:{port}/static/enhanced/{filename}"
+
+        return jsonify({
+            "success": True,
+            "image_url": public_url,
+            "filename": filename
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
 # GET /api/products/<id> — Get single product from Firestore
 # ---------------------------------------------------------------------------
 @products_bp.route('/<product_id>', methods=['GET'])
