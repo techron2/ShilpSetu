@@ -1,0 +1,21 @@
+{
+  "browser": {
+    "launchOptions": {
+      "headless": false
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "screen": {
+        "width": 360,
+        "height": 800
+      },
+      "deviceScaleFactor": 1,
+      "hasTouch": true,
+      "isMobile": true,
+      "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+    }
+  }
+}
