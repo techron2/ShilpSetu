@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 import '../../services/ai_catalog_service.dart';
+import '../../services/recording_file.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 import 'listing_review_screen.dart';
@@ -66,6 +67,8 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
         return;
       }
 
+      final recordingPath = await createRecordingPath();
+
       // Configure recording: 16kHz mono WAV format (ideal for SpeechRecognition)
       await _audioRecorder.start(
         const RecordConfig(
@@ -73,7 +76,7 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
           sampleRate: 16000,
           numChannels: 1,
         ),
-        path: '',
+        path: recordingPath,
       );
 
       setState(() {
@@ -116,6 +119,14 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
               debugPrint('[VoiceCatalog] Received ${audioBytes.length} bytes from Blob URL');
             } else {
               debugPrint('[VoiceCatalog] Failed to read audio blob URL: ${blobResponse.statusCode}');
+            }
+          } else {
+            debugPrint('[VoiceCatalog] Reading recorded audio file: $audioBlobPath');
+            audioBytes = await readRecordedAudio(audioBlobPath);
+            if (audioBytes != null) {
+              debugPrint('[VoiceCatalog] Read ${audioBytes.length} bytes from recorded file');
+            } else {
+              debugPrint('[VoiceCatalog] Recorded audio file was missing or empty');
             }
           }
         }

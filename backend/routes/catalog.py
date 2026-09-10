@@ -91,15 +91,16 @@ def voice_to_listing():
         else:
             logger.warning(
                 f"Speech transcription returned unsuccessful ({speech_result.get('error')}). "
-                f"Received {len(audio_bytes)} audio bytes. Falling back to default artisan description."
+                f"Received {len(audio_bytes)} audio bytes. Returning the transcription failure."
             )
-            fallback_transcripts = {
-                "hi": "यह शुद्ध लाल मिट्टी से बना पारंपरिक टेराकोटा कुल्हड़ और चाय सेट है, गोरखपुर के कारीगरों द्वारा चाक पर हाथ से बनाया गया",
-                "mr": "हे शुद्ध लाल मातीपासून बनवलेले पारंपारिक टेराकोटा कुल्हड आणि चहाचा सेट आहे",
-                "ta": "இது தூய சிவப்பு களிமண்ணால் செய்யப்பட்ட பாரம்பரிய டெரகோட்டா தேநீர் குவளை தொகுப்பு",
-                "en": "Handcrafted terracotta clay kulhad tea set made by traditional rural potters on potter wheel"
-            }
-            transcript = fallback_transcripts.get(lang_code, fallback_transcripts["hi"])
+            return jsonify({
+                "success": False,
+                "error": speech_result.get("error") or "Speech transcription failed",
+                "friendly_error": speech_result.get(
+                    "friendly_error",
+                    "आवाज़ साफ़ सुनाई नहीं दी, कृपया दोबारा बोलें (Could not transcribe your voice, please try again)"
+                )
+            }), 422
     else:
         return jsonify({
             "success": False,
