@@ -3,6 +3,8 @@ import logging
 import joblib
 import pandas as pd
 
+from services.categories import CANONICAL_CATEGORIES, normalize_category
+
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,7 +38,8 @@ def _generate_explanation(category: str, material_cost: float, size: str, region
         "Metal Craft": "धातु शिल्प (Metal Craft)",
         "Wood Craft": "काष्ठ शिल्प (Wood Craft)",
         "Jewellery": "हस्तनिर्मित आभूषण (Jewellery)",
-        "Accessories": "सहायक वस्तुएं (Accessories)",
+        "Embroidery": "कढ़ाई शिल्प (Embroidery)",
+        "Leather": "चर्म शिल्प (Leather)",
         "Other": "हस्तशिल्प उत्पाद"
     }
     cat_hi = category_names_hi.get(category, f"{category} शिल्प")
@@ -57,7 +60,10 @@ def suggest_product_price(
     region: str = "Uttar Pradesh"
 ) -> dict:
     """Predicts fair-trade e-commerce product price and returns price range + explanation."""
-    valid_categories = ["Pottery", "Textiles", "Painting", "Metal Craft", "Wood Craft", "Jewellery", "Accessories", "Other"]
+    # Canonical vocabulary; legacy spellings map via normalize_category so
+    # older products/clients still price against the right craft profile.
+    valid_categories = list(CANONICAL_CATEGORIES)
+    category = normalize_category(category, default="Pottery")
     if category not in valid_categories:
         category = "Other"
 
@@ -76,7 +82,8 @@ def suggest_product_price(
             "Metal Craft": 450.0,
             "Wood Craft": 250.0,
             "Jewellery": 160.0,
-            "Accessories": 120.0,
+            "Embroidery": 200.0,
+            "Leather": 300.0,
             "Other": 150.0
         }
         material_cost = default_costs.get(category, 150.0)
@@ -107,7 +114,8 @@ def suggest_product_price(
             "Metal Craft": 3.0,
             "Wood Craft": 3.0,
             "Textiles": 2.8,
-            "Accessories": 2.5,
+            "Embroidery": 3.4,
+            "Leather": 3.0,
             "Other": 2.8
         }
         mult = multipliers.get(category, 2.8)

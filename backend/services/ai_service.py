@@ -3,6 +3,8 @@ import re
 import json
 import logging
 
+from services.categories import is_canonical_category, normalize_category
+
 logger = logging.getLogger(__name__)
 
 
@@ -93,6 +95,27 @@ def _fallback_artisan_extraction(transcript: str, lang_code: str = "hi") -> dict
         desc_hi = "मजबूत शीशम की लकड़ी पर बारीक पारंपरिक नक्काशी द्वारा तैयार किया गया कलात्मक उत्पाद।"
         desc_en = "Artistic decorative woodwork carved meticulously by hand from seasoned natural Sheesham hardwood."
         features = ["प्राकृतिक शीशम की लकड़ी", "बारीक हाथ की नक्काशी", "दीर्घकालिक टिकाऊ पॉलिश"]
+    elif any(w in t_lower for w in ["jewel", "jewellery", "jewelry", "necklace", "bracelet", "आभूषण", "गहना", "माला", "कंगन"]):
+        category = "Jewellery"
+        title_hi = "हस्तनिर्मित पारंपरिक आभूषण"
+        title_en = "Handcrafted Traditional Artisan Jewellery"
+        desc_hi = "कुशल कारीगरों द्वारा पारंपरिक तकनीक से तैयार किया गया सुंदर हस्तनिर्मित आभूषण। उपहार और विशेष अवसरों के लिए उत्तम।"
+        desc_en = "Beautiful handcrafted jewellery made by skilled artisans using traditional heritage techniques. Perfect for gifting and special occasions."
+        features = ["100% हस्तनिर्मित कारीगरी", "पारंपरिक डिज़ाइन", "उपहार के लिए आदर्श"]
+    elif any(w in t_lower for w in ["embroidery", "embroidered", "phulkari", "chikankari", "कढ़ाई", "फुलकारी", "चिकनकारी"]):
+        category = "Embroidery"
+        title_hi = "हस्तकढ़ाई वाला पारंपरिक वस्त्र शिल्प"
+        title_en = "Hand-Embroidered Traditional Textile Craft"
+        desc_hi = "रंग-बिरंगे धागों से हाथ की कढ़ाई द्वारा सजाया गया पारंपरिक वस्त्र उत्पाद। हर टांके में कारीगर की मेहनत झलकती है।"
+        desc_en = "Traditional textile craft adorned with colorful hand embroidery. Every stitch reflects the artisan's skill and patience."
+        features = ["बारीक हाथ की कढ़ाई", "जीवंत प्राकृतिक रंग", "घर की सजावट हेतु उत्तम"]
+    elif any(w in t_lower for w in ["leather", "chamda", "chamde", "charm", "चमड़ा", "चर्म"]):
+        category = "Leather"
+        title_hi = "हस्तनिर्मित चर्म शिल्प उत्पाद"
+        title_en = "Handcrafted Leather Artisan Product"
+        desc_hi = "उत्तम गुणवत्ता वाले चमड़े से हाथ से तैयार किया गया मजबूत और आकर्षक उत्पाद। दैनिक उपयोग के लिए आदर्श।"
+        desc_en = "Durable and attractive handcrafted product made from quality leather. Ideal for everyday use."
+        features = ["असली चमड़ा", "मजबूत हाथ की सिलाई", "टिकाऊ गुणवत्ता"]
     else:
         category = "Other"
         title_hi = f"हस्तशिल्प: {transcript[:30].strip()}"
@@ -141,7 +164,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         2. "title_hi": Clear, attractive product title in Hindi (3 to 8 words).
         3. "description_en": Compelling product description in English (2-3 sentences) highlighting craft tradition, material, and usefulness.
         4. "description_hi": Compelling product description in Hindi (2-3 sentences) highlighting craft tradition, material, and usefulness.
-        5. "category": EXACTLY one of: "Pottery", "Textiles", "Painting", "Metal Craft", "Accessories", "Jewellery", "Wood Craft", "Other".
+        5. "category": EXACTLY one of: "Textiles", "Pottery", "Jewellery", "Embroidery", "Wood Craft", "Leather", "Painting", "Metal Craft", "Other".
         6. "key_features": An array of 3 to 4 short bullet highlights (e.g. material, handmade quality, heritage).
 
         Output ONLY valid JSON matching this schema:
@@ -230,7 +253,11 @@ def process_voice_to_catalog(transcript: str, lang_code: str = "hi") -> dict:
     title_hi = extracted.get("title_hi", "")
     desc_en = extracted.get("description_en", "")
     desc_hi = extracted.get("description_hi", "")
-    category = extracted.get("category", "Other")
+    # Guarantee canonical vocabulary even if the model returns a legacy
+    # spelling; unrecognized values fall back to "Other".
+    raw_category = extracted.get("category", "Other")
+    norm_category = normalize_category(raw_category, default="Other")
+    category = norm_category if is_canonical_category(norm_category) else "Other"
     features = extracted.get("key_features", [])
 
     # Step 2: Safety check - if any language field is unexpectedly empty, fill with safe translation

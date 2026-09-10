@@ -12,7 +12,8 @@ const List<String> _kCategories = [
   'Textiles',
   'Painting',
   'Metal Craft',
-  'Accessories',
+  'Embroidery',
+  'Leather',
   'Jewellery',
   'Wood Craft',
   'Other',
@@ -106,7 +107,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       'Metal Craft': '450',
       'Wood Craft': '250',
       'Jewellery': '160',
-      'Accessories': '120',
+      'Embroidery': '200',
+      'Leather': '300',
       'Other': '150',
     };
     _materialCostCtrl = TextEditingController(
@@ -420,7 +422,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         'Metal Craft': '450',
                         'Wood Craft': '250',
                         'Jewellery': '160',
-                        'Accessories': '120',
+                        'Embroidery': '200',
+                        'Leather': '300',
                         'Other': '150',
                       };
                       if (_materialCostCtrl.text.isEmpty ||

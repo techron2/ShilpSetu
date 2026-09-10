@@ -16,8 +16,8 @@ class BuyerHomeScreen extends StatefulWidget {
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _categories = [
-    'All', 'Textiles', 'Pottery', 'Jewelry', 'Embroidery',
-    'Woodwork', 'Leather', 'Painting', 'Metalwork',
+    'All', 'Textiles', 'Pottery', 'Jewellery', 'Embroidery',
+    'Wood Craft', 'Leather', 'Painting', 'Metal Craft',
   ];
   String _selectedCategory = 'All';
   List<Map<String, dynamic>> _products = [];

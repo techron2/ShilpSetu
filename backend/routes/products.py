@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from services.firebase_service import get_firestore_client
+from services.categories import normalize_category
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,11 @@ def create_product():
     try:
         now_iso = datetime.now(timezone.utc).isoformat()
         doc_ref = db.collection('products').document()
+        # Normalize to the canonical vocabulary so legacy spellings from
+        # older clients (e.g. "Jewelry") do not fragment exact-match filters.
+        # Unknown values (incl. the historical "Uncategorized" default) pass
+        # through untouched — no data migration.
+        raw_category = data.get("category", "Uncategorized")
         product = {
             "id":             doc_ref.id,
             "artisan_id":     data.get("artisan_id"),
@@ -52,7 +58,7 @@ def create_product():
             "image_url":      data.get("image_url", ""),
             "price":          float(data.get("price", 0)),
             "stock_quantity": int(data.get("stock_quantity", 0)),
-            "category":       data.get("category", "Uncategorized"),
+            "category":       normalize_category(raw_category, default="Uncategorized"),
             "created_at":     now_iso,
         }
         doc_ref.set(product)
@@ -112,6 +118,11 @@ def search_products():
     """
     query_text = (request.args.get('query') or '').strip().lower()
     category   = (request.args.get('category') or '').strip()
+    # Accept legacy spellings from older clients (e.g. "Jewelry") by mapping
+    # them to canonical values before the exact Firestore match. Empty stays
+    # empty so unfiltered listing still works.
+    if category:
+        category = normalize_category(category)
     min_price  = request.args.get('min_price', type=float)
     max_price  = request.args.get('max_price', type=float)
     limit      = request.args.get('limit', default=50, type=int)
@@ -234,6 +245,9 @@ def update_product(product_id):
 
     allowed_fields = ['title', 'description', 'image_url', 'price', 'stock_quantity', 'category']
     updates = {k: v for k, v in data.items() if k in allowed_fields}
+    # Same canonicalization as create (see above).
+    if 'category' in updates:
+        updates['category'] = normalize_category(updates['category'], default="Uncategorized")
 
     if not updates:
         return jsonify({"success": False, "error": "No valid fields to update"}), 400

@@ -25,15 +25,20 @@ import re
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from services.firebase_service import get_firestore_client
+from services.categories import (
+    CANONICAL_CATEGORIES,
+    LEGACY_CATEGORY_ALIASES,
+    is_canonical_category,
+    normalize_category,
+)
 
 logger = logging.getLogger(__name__)
 
 rfq_bp = Blueprint('rfq', __name__)
 
-_CRAFT_CATEGORIES = [
-    "Textiles", "Pottery", "Jewelry", "Woodwork", "Leather",
-    "Painting", "Embroidery", "Metalwork", "Stonework", "Basketry", "Other"
-]
+# Canonical KalaVistar categories (see services/categories.py). Legacy
+# spellings are accepted via normalize_category for backward compatibility.
+_CRAFT_CATEGORIES = list(CANONICAL_CATEGORIES)
 
 
 def _gemini_parse_rfq(requirement_text: str) -> dict:
@@ -97,12 +102,17 @@ def _fallback_parse_rfq(requirement_text: str) -> dict:
     total_budget = float(budget_match.group(1).replace(',', '')) if budget_match else 0
     target_price = round(total_budget / quantity, 2) if total_budget and quantity else 0.0
 
-    # Detect category
+    # Detect category (canonical first, then legacy spellings)
     category = "Other"
     for cat in _CRAFT_CATEGORIES:
         if cat.lower() in text:
             category = cat
             break
+    else:
+        for legacy, canonical in LEGACY_CATEGORY_ALIASES.items():
+            if legacy in text:
+                category = canonical
+                break
 
     from datetime import timedelta
     deadline = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
@@ -148,6 +158,14 @@ def create_rfq():
         logger.warning(f"Gemini RFQ parsing failed ({e}), using fallback")
         ai_used = False
         structured = _fallback_parse_rfq(requirement_text)
+
+    # ── Normalize category to the canonical vocabulary ───────────────────────
+    # Legacy spellings (e.g. from older prompts/clients) map to canonical
+    # values; anything unrecognized stays "Other" instead of silently
+    # filtering to zero results downstream.
+    raw_category = (structured or {}).get("category", "Other")
+    normalized = normalize_category(raw_category, default="Other")
+    structured["category"] = normalized if is_canonical_category(normalized) else "Other"
 
     # ── Save to Firestore ─────────────────────────────────────────────────────
     db = get_firestore_client()

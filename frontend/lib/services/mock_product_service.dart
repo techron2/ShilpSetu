@@ -53,7 +53,7 @@ class MockProductService implements IProductService {
       imageUrl:      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600',
       price:         450,
       stockQuantity: 30,
-      category:      'Accessories',
+      category:      'Other',
       createdAt:     '2026-09-04',
     ),
     const Product(

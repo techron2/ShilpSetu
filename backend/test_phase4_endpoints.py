@@ -76,7 +76,7 @@ SAMPLE_PRODUCTS = [
         "artisan_id": SAMPLE_ARTISAN_ID,
         "title": "Silver Tribal Necklace - Dhokra",
         "description": "Dhokra lost-wax cast tribal silver-finish necklace. Handmade, each piece unique.",
-        "category": "Jewelry",
+        "category": "Jewellery",
         "price": 2200,
         "stock_quantity": 40,
         "region": "Chhattisgarh",

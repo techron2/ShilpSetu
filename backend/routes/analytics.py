@@ -46,7 +46,7 @@ def _get_mock_analytics(artisan_id: str):
         "category_breakdown": [
             {"category": "Pottery", "share_pct": 58},
             {"category": "Textiles", "share_pct": 24},
-            {"category": "Woodwork", "share_pct": 18}
+            {"category": "Wood Craft", "share_pct": 18}
         ]
     }
 
