@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/inr.dart';
 import 'buyer_product_detail_screen.dart';
 
 /// Buyer home screen with product search, category chips, and product grid.
@@ -315,7 +316,15 @@ class _ProductCard extends StatelessWidget {
     final title    = product['title']?.toString() ?? 'Product';
     final price    = (product['price'] as num?)?.toDouble() ?? 0;
     final category = product['category']?.toString() ?? '';
-    final rating   = (product['rating'] as num?)?.toDouble() ?? 4.0;
+    // Trust metadata is data-driven: seeded products carry rating /
+    // review_count / artisan_cluster, older documents may lack them.
+    // Missing data hides the indicator instead of fabricating it.
+    final rating   = (product['rating'] as num?)?.toDouble();
+    final reviewCount = (product['review_count'] as num?)?.toInt() ?? 0;
+    final ratingText = rating != null
+        ? '${rating.toStringAsFixed(1)}${reviewCount > 0 ? ' ($reviewCount)' : ''}'
+        : '';
+    final cluster  = product['artisan_cluster']?.toString() ?? '';
     final imageUrl = product['image_url']?.toString() ?? '';
 
     return GestureDetector(
@@ -400,61 +409,49 @@ class _ProductCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            color: Color(0xFFD4AF37), size: 14),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF4B5563),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            '🛡️ Verified',
-                            style: TextStyle(
-                              fontSize: 9,
+                    // Shown only when the product actually carries rating data.
+                    if (ratingText.isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              color: Color(0xFFD4AF37), size: 14),
+                          const SizedBox(width: 2),
+                          Text(
+                            ratingText,
+                            style: const TextStyle(
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2E7D32),
+                              color: Color(0xFF4B5563),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '₹${price.toStringAsFixed(0)}',
+                          formatInr(price),
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
                             color: AppTheme.primaryTerracotta,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F1DC),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                        // Shown only when the product declares cluster membership.
+                        if (cluster.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F1DC),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                            ),
+                            child: const Text(
+                              '🌿 Cluster',
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF8C6E14)),
+                            ),
                           ),
-                          child: const Text(
-                            '🌿 Cluster',
-                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF8C6E14)),
-                          ),
-                        ),
                       ],
                     ),
                   ],

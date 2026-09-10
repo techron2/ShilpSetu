@@ -6,6 +6,7 @@ import '../../config/api_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 import 'rfq_screen.dart';
 import 'supplier_comparison_screen.dart';
@@ -41,9 +42,16 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
   double get price    => (p['price'] as num?)?.toDouble() ?? 0;
   int    get stock    => (p['stock_quantity'] as num?)?.toInt() ?? 0;
   String get category => p['category']?.toString() ?? '';
-  double get rating   => (p['rating'] as num?)?.toDouble() ?? 4.0;
+  // Rating is nullable on purpose: older Firestore products may not carry
+  // rating data, in which case the UI shows a neutral state instead of a
+  // fabricated default score.
+  double? get ratingOrNull => (p['rating'] as num?)?.toDouble();
+  bool   get hasRating => ratingOrNull != null;
+  double get rating    => ratingOrNull ?? 0;
   int    get reviews  => (p['review_count'] as num?)?.toInt() ?? 0;
   String get region   => p['region']?.toString() ?? '';
+  String get artisanName => p['artisan_name']?.toString() ?? '';
+  String get productCluster => p['artisan_cluster']?.toString() ?? '';
   String get imageUrl => p['image_url']?.toString() ?? '';
   String get artisanId => p['artisan_id']?.toString() ?? '';
   String get productId => p['id']?.toString() ?? '';
@@ -79,7 +87,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
     final caption = promo?['caption'] ??
         '🌿 Check out this authentic handcrafted $title on ShilpSetu!\n\n'
-        'Price: ₹${price.toStringAsFixed(0)}\n'
+        'Price: ${formatInr(price)}\n'
         'View Digital Craft Passport: ${ApiConfig.passportPublicView(productId.isNotEmpty ? productId : 'sample')}\n\n'
         '#ShilpSetu #VocalForLocal #HandmadeInIndia';
 
@@ -263,7 +271,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
               Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text('Quantity: $_quantity unit${_quantity > 1 ? 's' : ''}'),
-              Text('Total: ₹${(price * _quantity).toStringAsFixed(0)}'),
+              Text('Total: ${formatInr(price * _quantity)}'),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(10),
@@ -361,21 +369,33 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Rating + Region row
+                  // Rating + Region row (rating shown only when present in data)
                   Row(
                     children: [
-                      ...List.generate(5, (i) => Icon(
-                        i < rating.round()
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: AppTheme.secondaryOchre,
-                        size: 18,
-                      )),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${rating.toStringAsFixed(1)} ($reviews reviews)',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-                      ),
+                      if (hasRating) ...[
+                        ...List.generate(5, (i) => Icon(
+                          i < rating.round()
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: AppTheme.secondaryOchre,
+                          size: 18,
+                        )),
+                        const SizedBox(width: 6),
+                        Text(
+                          reviews > 0
+                              ? '${rating.toStringAsFixed(1)} ($reviews review${reviews == 1 ? '' : 's'})'
+                              : rating.toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                        ),
+                      ] else ...[
+                        const Icon(Icons.rate_review_outlined,
+                            size: 16, color: Color(0xFF9CA3AF)),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'No ratings yet',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                        ),
+                      ],
                       const Spacer(),
                       if (region.isNotEmpty)
                         Row(
@@ -395,6 +415,32 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                         ),
                     ],
                   ),
+
+                  // Artisan identity (from product data when available)
+                  if (artisanName.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded,
+                            size: 15, color: AppTheme.primaryTerracotta),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            productCluster.isNotEmpty
+                                ? 'By $artisanName • $productCluster'
+                                : 'By $artisanName',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.darkIndigo,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
 
                   // Artisan Trust Score Badge
                   if (_trustScore != null) ...[
@@ -468,7 +514,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   Row(
                     children: [
                       Text(
-                        '₹${price.toStringAsFixed(0)}',
+                        formatInr(price),
                         style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w900,
@@ -582,7 +628,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                           ),
                         ),
                         Text(
-                          '₹${(price * _quantity).toStringAsFixed(0)}',
+                          formatInr(price * _quantity),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
