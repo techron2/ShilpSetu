@@ -223,7 +223,7 @@ def _generate_intelligent_craft_answer(question: str, language: str, context: di
         return (
             f"Hello Artisan! Regarding your query about {question}:\n\n"
             f"Your handcrafted {category} represents India's rich cultural heritage. "
-            "To maximize your fair income on ShilpSetu, focus on:\n"
+            "To maximize your fair income on KalaVistar, focus on:\n"
             "1. Accurate fair pricing calculated from material cost and skilled crafting time.\n"
             "2. Professional clean studio photos that highlight your craft's authentic details.\n"
             "3. Responsive customer service and safe packaging for 5-star ratings."
@@ -232,7 +232,7 @@ def _generate_intelligent_craft_answer(question: str, language: str, context: di
         return (
             f"नमस्ते शिल्पकार जी! आपके सवाल '{question}' के संबंध में:\n\n"
             f"आपका {category} भारत की अमूल्य सांस्कृतिक धरोहर है। "
-            "शिल्पसेतु पर अपनी आय और ग्राहक बढ़ाने के लिए इन 3 बातों का ध्यान रखें:\n"
+            "KalaVistar पर अपनी आय और ग्राहक बढ़ाने के लिए इन 3 बातों का ध्यान रखें:\n"
             "1. निष्पक्ष मूल्य निर्धारण: कच्ची सामग्री और कारीगरी के समय के अनुसार सही दाम तय करें।\n"
             "2. साफ़ फोटो: उत्पाद की उच्च गुणवत्ता वाली फोटो अपलोड करें।\n"
             "3. सुरक्षित पैकेजिंग: उत्पाद को मजबूती से पैक करें ताकि सुरक्षित डिलीवरी हो।"
@@ -292,7 +292,7 @@ def ask_business_assistant(
             )
 
             prompt = f"""
-You are "ShilpSetu Vyapaar Sahayak" (शिल्पसेतु व्यापार सहायक) — a wise, empathetic, encouraging Indian craft business counselor who empowers rural, indigenous, and marginalized traditional artisans.
+You are "KalaVistar Vyapaar Sahayak" (KalaVistar व्यापार सहायक) — a wise, empathetic, encouraging Indian craft business counselor who empowers rural, indigenous, and marginalized traditional artisans.
 
 ARTISAN CONTEXT:
 Artisan ID: {artisan_id}

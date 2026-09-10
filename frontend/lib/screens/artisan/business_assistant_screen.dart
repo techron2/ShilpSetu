@@ -58,7 +58,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     // Welcome message from AI Business Assistant
     _messages.add(
       ChatMessage(
-        text: 'नमस्ते शिल्पकार जी! 🙏 मैं आपका शिल्पसेतु व्यापार सहायक हूँ। '
+        text: 'नमस्ते शिल्पकार जी! 🙏 मैं आपका KalaVistar व्यापार सहायक हूँ। '
             'आप मुझसे अपने शिल्प की कीमत, बिक्री बढ़ाने के तरीके, त्योहारों के ऑफर या पैकेजिंग के बारे में कोई भी सवाल पूछ सकते हैं।',
         isUser: false,
         timestamp: DateTime.now(),
@@ -250,7 +250,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   Text(
-                    'शिल्पसेतु AI बिजनेस गाइड • सक्रिय',
+                    'KalaVistar AI बिजनेस गाइड • सक्रिय',
                     style: TextStyle(fontSize: 11, color: Colors.white70),
                   ),
                 ],
@@ -425,7 +425,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                   const Icon(Icons.auto_awesome, color: AppTheme.secondaryOchre, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    'शिल्पसेतु व्यापार सहायक',
+                    'KalaVistar व्यापार सहायक',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

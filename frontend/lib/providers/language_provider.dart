@@ -93,7 +93,7 @@ class LanguageProvider extends ChangeNotifier {
 
   static const Map<String, Map<String, String>> _translations = {
     'hi': {
-      'app_title': 'शिल्पसेतु',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'हस्तशिल्प को दुनिया से जोड़ना',
       'choose_language': 'अपनी भाषा चुनें',
       'choose_language_sub': 'आगे बढ़ने के लिए अपनी पसंदीदा भाषा चुनें',
@@ -106,7 +106,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'फ़ोन नंबर',
       'next_role': 'अगला: भूमिका चुनें',
       'already_have_account': 'पहले से खाता है? लॉग इन करें',
-      'login_title': 'शिल्पसेतु में आपका स्वागत है',
+      'login_title': 'KalaVistar में आपका स्वागत है',
       'login_sub': 'हस्तशिल्प को दुनिया से जोड़ना',
       'forgot_password': 'पासवर्ड भूल गए?',
       'login_btn': 'लॉग इन करें',
@@ -123,7 +123,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'आपकी क्या भूमिका है?',
-      'role_sub': 'शिल्पसेतु पर आप क्या करना चाहते हैं?',
+      'role_sub': 'KalaVistar पर आप क्या करना चाहते हैं?',
       'role_artisan': 'मैं एक कारीगर हूँ (Artisan)',
       'role_artisan_desc': 'अपने शिल्पों को सूचीबद्ध करें, ऑनलाइन ऑर्डर प्राप्त करें और बिक्री बढ़ाएं',
       'role_buyer': 'मैं एक खरीदार / व्यापारी हूँ (Buyer)',
@@ -173,7 +173,7 @@ class LanguageProvider extends ChangeNotifier {
       'contact_info': 'संपर्क विवरण',
     },
     'en': {
-      'app_title': 'ShilpSetu',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'Connecting artisans to the world',
       'choose_language': 'Choose Your Language',
       'choose_language_sub': 'Select your preferred language to continue',
@@ -186,7 +186,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'Phone Number',
       'next_role': 'Next: Choose Role',
       'already_have_account': 'Already have an account? Log In',
-      'login_title': 'Welcome to ShilpSetu',
+      'login_title': 'Welcome to KalaVistar',
       'login_sub': 'Connecting artisans to the world',
       'forgot_password': 'Forgot Password?',
       'login_btn': 'Log In',
@@ -203,7 +203,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'Choose Your Role',
-      'role_sub': 'What would you like to do on ShilpSetu?',
+      'role_sub': 'What would you like to do on KalaVistar?',
       'role_artisan': 'I am an Artisan',
       'role_artisan_desc': 'List your crafts, receive direct orders, and grow your business',
       'role_buyer': 'I am a Buyer / Merchant',
@@ -253,7 +253,7 @@ class LanguageProvider extends ChangeNotifier {
       'contact_info': 'Contact Info',
     },
     'gu': {
-      'app_title': 'શિલ્પસેતુ',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'કારીગરોને વિશ્વ સાથે જોડવું',
       'choose_language': 'તમારી ભાષા પસંદ કરો',
       'choose_language_sub': 'આગળ વધવા માટે તમારી ભાષા પસંદ કરો',
@@ -266,7 +266,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'ફોન નંબર',
       'next_role': 'આગળ: ભૂમિકા પસંદ કરો',
       'already_have_account': 'એકાઉન્ટ છે? લોગ ઈન કરો',
-      'login_title': 'શિલ્પસેતુમાં આપનું સ્વાગત છે',
+      'login_title': 'KalaVistarમાં આપનું સ્વાગત છે',
       'login_sub': 'કારીગરોને વિશ્વ સાથે જોડવું',
       'forgot_password': 'પાસવર્ડ ભૂલી ગયા છો?',
       'login_btn': 'લોગ ઇન કરો',
@@ -283,7 +283,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'તમારી ભૂમિકા પસંદ કરો',
-      'role_sub': 'તમે શિલ્પસેતુ પર શું કરવા માંગો છો?',
+      'role_sub': 'તમે KalaVistar પર શું કરવા માંગો છો?',
       'role_artisan': 'હું એક કારીગર છું',
       'role_artisan_desc': 'તમારી બનાવટો ઉમેરો અને ઓર્ડર મેળવો',
       'role_buyer': 'હું એક ખરીદદાર છું',
@@ -315,7 +315,7 @@ class LanguageProvider extends ChangeNotifier {
       'contact_info': 'સંપર્ક વિગતો',
     },
     'mr': {
-      'app_title': 'शिल्पसेतू',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'कारागिरांना जगाशी जोडणे',
       'choose_language': 'तुमची भाषा निवडा',
       'choose_language_sub': 'पुढे जाण्यासाठी तुमची आवडती भाषा निवडा',
@@ -328,7 +328,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'फोन नंबर',
       'next_role': 'पुढील: भूमिका निवडा',
       'already_have_account': 'आधीच खाते आहे? लॉग इन करा',
-      'login_title': 'शिल्पसेतूमध्ये आपले स्वागत आहे',
+      'login_title': 'KalaVistarमध्ये आपले स्वागत आहे',
       'login_sub': 'कारागिरांना जगाशी जोडणे',
       'forgot_password': 'पासवर्ड विसरलात?',
       'login_btn': 'लॉग इन करा',
@@ -345,7 +345,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'तुमची भूमिका निवडा',
-      'role_sub': 'तुम्ही शिल्पसेतूवर काय करू इच्छिता?',
+      'role_sub': 'तुम्ही KalaVistarवर काय करू इच्छिता?',
       'role_artisan': 'मी एक कारागीर आहे',
       'role_artisan_desc': 'तुमच्या वस्तू सूचीबद्ध करा आणि ऑर्डर मिळवा',
       'role_buyer': 'मी एक खरेदीदार आहे',
@@ -377,7 +377,7 @@ class LanguageProvider extends ChangeNotifier {
       'contact_info': 'संपर्क माहिती',
     },
     'bn': {
-      'app_title': 'শিল্পসেতু',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'কারিগরদের বিশ্বের সাথে সংযুক্ত করা',
       'choose_language': 'আপনার ভাষা নির্বাচন করুন',
       'choose_language_sub': 'চালিয়ে যেতে আপনার পছন্দের ভাষা চয়ন করুন',
@@ -390,7 +390,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'ফোন নম্বর',
       'next_role': 'পরবর্তী: ভূমিকা চয়ন করুন',
       'already_have_account': 'অ্যাকাউন্ট আছে? লগ ইন করুন',
-      'login_title': 'শিল্পসেতুতে স্বাগতম',
+      'login_title': 'KalaVistarতে স্বাগতম',
       'login_sub': 'কারিগরদের বিশ্বের সাথে সংযুক্ত করা',
       'forgot_password': 'পাসওয়ার্ড ভুলে গেছেন?',
       'login_btn': 'লগ ইন করুন',
@@ -407,7 +407,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'আপনার ভূমিকা চয়ন করুন',
-      'role_sub': 'আপনি শিল্পসেতুতে কী করতে চান?',
+      'role_sub': 'আপনি KalaVistarতে কী করতে চান?',
       'role_artisan': 'আমি একজন কারিগর',
       'role_artisan_desc': 'আপনার তৈরি পণ্য তালিকাভুক্ত করুন ও অর্ডার পান',
       'role_buyer': 'আমি একজন ক্রেতা',
@@ -439,7 +439,7 @@ class LanguageProvider extends ChangeNotifier {
       'contact_info': 'যোগাযোগের তথ্য',
     },
     'ta': {
-      'app_title': 'சிற்பசேது',
+      'app_title': 'KalaVistar',
       'app_subtitle': 'கைவினைஞர்களை உலகத்துடன் இணைக்கிறது',
       'choose_language': 'உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்',
       'choose_language_sub': 'தொடர உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்',
@@ -452,7 +452,7 @@ class LanguageProvider extends ChangeNotifier {
       'phone': 'தொலைபேசி எண்',
       'next_role': 'அடுத்து: பாத்திரத்தைத் தேர்வுசெய்க',
       'already_have_account': 'கணக்கு உள்ளதா? உள்நுழையவும்',
-      'login_title': 'சிற்பசேதுவிற்கு வரவேற்கிறோம்',
+      'login_title': 'KalaVistarற்கு வரவேற்கிறோம்',
       'login_sub': 'கைவினைஞர்களை உலகத்துடன் இணைக்கிறது',
       'forgot_password': 'கடவுச்சொல்லை மறந்துவிட்டீர்களா?',
       'login_btn': 'உள்நுழையவும்',
@@ -469,7 +469,7 @@ class LanguageProvider extends ChangeNotifier {
 
       // Role Selection
       'role_title': 'உங்கள் பாத்திரத்தைத் தேர்ந்தெடுக்கவும்',
-      'role_sub': 'சிற்பசேதுவில் நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?',
+      'role_sub': 'KalaVistarல் நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?',
       'role_artisan': 'நான் ஒரு கைவினைஞர்',
       'role_artisan_desc': 'உங்கள் கைவினைப் பொருட்களைப் பட்டியலிட்டு ஆர்டர்களைப் பெறுங்கள்',
       'role_buyer': 'நான் ஒரு வாடிக்கையாளர்',

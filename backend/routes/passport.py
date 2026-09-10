@@ -15,7 +15,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ passport.title }} — Digital Craft Passport | ShilpSetu</title>
+  <title>{{ passport.title }} — Digital Craft Passport | KalaVistar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Rozha+One&display=swap" rel="stylesheet">
@@ -195,7 +195,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
   <div class="container">
     <div class="header-banner">
-      <div class="header-badge">🌿 ShilpSetu Digital Craft Passport</div>
+      <div class="header-badge">🌿 KalaVistar Digital Craft Passport</div>
       <h1 class="title">{{ passport.title }}</h1>
       <p class="subtitle">Artisan: {{ passport.artisan.name }} • {{ passport.origin_region }}</p>
     </div>
@@ -257,7 +257,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <div class="footer">
-      Powered by <strong>ShilpSetu</strong> — Empowering Traditional Indian Artisans with AI & Direct Market Access.<br>
+      Powered by <strong>KalaVistar</strong> — Empowering Traditional Indian Artisans with AI & Direct Market Access.<br>
       Scan verified on {{ passport.issued_at }}.
     </div>
   </div>

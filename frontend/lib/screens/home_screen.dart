@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
                               Text(
                                 cluster != null && cluster.isNotEmpty
                                     ? cluster
-                                    : 'ShilpSetu Artisan',
+                                    : 'KalaVistar Artisan',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 13,

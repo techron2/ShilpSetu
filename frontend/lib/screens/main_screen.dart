@@ -50,7 +50,7 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
   ];
 
   static const List<String> _titles = [
-    "शिल्पसेतु • होम (Home)",
+    "KalaVistar • होम (Home)",
     "शिल्प सूची (Catalog)",
     "ऑर्डर्स व डिलीवरी (Orders)",
     "शिल्पकार प्रोफ़ाइल (Profile)",
@@ -218,7 +218,7 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
   ];
 
   static const List<String> _titles = [
-    "ShilpSetu • Discover",
+    "KalaVistar • Discover",
     "📋 Request Quote (RFQ)",
     "📦 My Orders",
     "My Profile",

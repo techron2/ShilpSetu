@@ -86,10 +86,10 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
     setState(() => _isGeneratingPromo = false);
 
     final caption = promo?['caption'] ??
-        '🌿 Check out this authentic handcrafted $title on ShilpSetu!\n\n'
+        '🌿 Check out this authentic handcrafted $title on KalaVistar!\n\n'
         'Price: ${formatInr(price)}\n'
         'View Digital Craft Passport: ${ApiConfig.passportPublicView(productId.isNotEmpty ? productId : 'sample')}\n\n'
-        '#ShilpSetu #VocalForLocal #HandmadeInIndia';
+        '#KalaVistar #VocalForLocal #HandmadeInIndia';
 
     if (!mounted) return;
     showModalBottomSheet(

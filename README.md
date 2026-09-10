@@ -1,8 +1,8 @@
-# 🎨 ShilpSetu (शिल्पसेतु)
+# 🎨 KalaVistar
 ### *AI-Driven Market Linkage & Smart Cataloging for Marginalized Artisans*
 > **Smart India Hackathon Project**
 
-Welcome to **ShilpSetu**! This platform empowers traditional and marginalized rural artisans (potters, weavers, handicraft makers) by giving them an accessible mobile app to digitize and sell their craft directly to national and global buyers.
+Welcome to **KalaVistar**! This platform empowers traditional and marginalized rural artisans (potters, weavers, handicraft makers) by giving them an accessible mobile app to digitize and sell their craft directly to national and global buyers.
 
 ---
 
@@ -13,7 +13,7 @@ Think of this project as having two main parts:
 - **`backend/` (The Engine / Server)**: What works behind the scenes to fetch data, handle orders, and securely connect to the database. Built with **Python Flask** and **Firebase Admin**.
 
 ```text
-ShilpSetu/
+KalaVistar/
 ├── backend/                       # Python Flask server
 │   ├── app.py                     # Main server entrypoint
 │   ├── requirements.txt           # Required Python packages

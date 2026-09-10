@@ -315,7 +315,7 @@ class _EmptyView extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Add your first handicraft product and start selling on ShilpSetu!',
+              'Add your first handicraft product and start selling on KalaVistar!',
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme

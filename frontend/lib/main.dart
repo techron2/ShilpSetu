@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: MaterialApp(
-        title: 'ShilpSetu - Artisan App',
+        title: 'KalaVistar',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AuthGate(),
@@ -44,6 +44,9 @@ class MyApp extends StatelessWidget {
 
 /// Backwards-compatible alias for ShilpSetuApp
 typedef ShilpSetuApp = MyApp;
+
+/// Canonical product brand alias
+typedef KalaVistarApp = MyApp;
 
 /// Top-level single source of truth for authentication state.
 ///

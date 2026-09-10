@@ -150,7 +150,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Your product will be visible to buyers on ShilpSetu Marketplace.',
+                        'Your product will be visible to buyers on KalaVistar Marketplace.',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

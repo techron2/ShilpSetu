@@ -26,7 +26,7 @@ else:
     logger.warning("[STARTUP] GEMINI_API_KEY not found in environment (.env). Fallback modes will be active.")
 
 def create_app():
-    """Application factory for ShilpSetu Flask Backend."""
+    """Application factory for KalaVistar Flask Backend."""
     app = Flask(__name__)
     
     # Enable Cross-Origin Resource Sharing (CORS) for mobile/web frontends
@@ -53,7 +53,7 @@ def create_app():
     @app.route("/")
     def index():
         return {
-            "app": "ShilpSetu Backend API",
+            "app": "KalaVistar Backend API",
             "version": "1.0.0",
             "health_check": "/api/health",
             "message": "AI-Driven Market Linkage and Smart Cataloging for Marginalized Artisans"
@@ -66,5 +66,5 @@ app = create_app()
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_ENV", "development") == "development"
-    logger.info(f"Starting ShilpSetu backend server on port {port} (debug={debug})...")
+    logger.info(f"Starting KalaVistar backend server on port {port} (debug={debug})...")
     app.run(host="0.0.0.0", port=port, debug=debug)

@@ -155,7 +155,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         client = genai.Client(api_key=api_key)
 
         prompt = f"""
-        You are ShilpSetu AI, an expert e-commerce catalog assistant empowering marginalized Indian rural artisans.
+        You are KalaVistar AI, an expert e-commerce catalog assistant empowering marginalized Indian rural artisans.
         A traditional artisan spoke this description of their craft:
         "{transcript}"
 

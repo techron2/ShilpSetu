@@ -45,7 +45,7 @@ def _generate_caption_with_gemini(product: dict, artisan: dict, language: str) -
     artisan_name = artisan.get('name', 'Heritage Artisan')
     lang_desc = _LANG_NAMES.get(language, language)
 
-    prompt = f"""You are a master social media copywriter for ShilpSetu, a platform celebrating traditional Indian artisans.
+    prompt = f"""You are a master social media copywriter for KalaVistar, a platform celebrating traditional Indian artisans.
 Write an authentic, warm, and highly engaging promotional caption suitable for sharing directly on WhatsApp and social media.
 
 Product Details:
@@ -64,7 +64,7 @@ Requirements:
 3. Include culturally appealing emojis (🌿, 🪔, 🏺, ✨, 🇮🇳, 🛒).
 4. State the price clearly: ₹{price}.
 5. Include a call to action asking people to message or order to support local artisans directly (#VocalForLocal).
-6. End with relevant hashtags: #ShilpSetu #VocalForLocal #HandmadeInIndia #IndianHandicrafts #{category.replace(' ', '')}
+6. End with relevant hashtags: #KalaVistar #VocalForLocal #HandmadeInIndia #IndianHandicrafts #{category.replace(' ', '')}
 7. Keep the caption concise (between 80 and 150 words).
 8. Return ONLY the caption text without any introductory text, markdown fences, or explanations."""
 
@@ -89,15 +89,15 @@ def _fallback_caption(product: dict, artisan: dict, language: str) -> str:
 
     if language.startswith('hi'):
         return (
-            f"🌿 *शिल्पसेतु विशेष — {title}* 🏺✨\n\n"
+            f"🌿 *KalaVistar विशेष — {title}* 🏺✨\n\n"
             f"नमस्ते जी! यह सुंदर और शत-प्रतिशत प्राकृतिक {title} हमारे हुनरमंद शिल्पकार {artisan_name} ({region}) द्वारा "
             f"पूर्णतः पारंपरिक पद्धति से हस्तनिर्मित किया गया है।\n\n"
             f"✅ 100% शुद्ध और प्रामाणिक हस्तशिल्प\n"
             f"🌱 पर्यावरण अनुकूल एवं टिकाऊ\n"
             f"💰 *विशेष मूल्य: मात्र ₹{price}*\n\n"
             f"सीधे स्थानीय कारीगरों को समर्थन दें और अपने घर में लाएं भारतीय विरासत की मिठास! 🪔\n\n"
-            f"📲 ऑर्डर करने या पूछताछ के लिए अभी रिप्लाई करें या शिल्पसेतु पर देखें!\n\n"
-            f"#ShilpSetu #VocalForLocal #HandmadeInIndia #AtmanirbharBharat #{category}"
+            f"📲 ऑर्डर करने या पूछताछ के लिए अभी रिप्लाई करें या KalaVistar पर देखें!\n\n"
+            f"#KalaVistar #VocalForLocal #HandmadeInIndia #AtmanirbharBharat #{category}"
         )
     else:
         return (
@@ -108,8 +108,8 @@ def _fallback_caption(product: dict, artisan: dict, language: str) -> str:
             f"🌱 Sustainable & Eco-friendly\n"
             f"💰 *Special Price: ₹{price}*\n\n"
             f"Bring home the soul of Indian heritage while empowering rural artisan communities directly. 🇮🇳\n\n"
-            f"📲 Reply to this message or order via ShilpSetu today!\n\n"
-            f"#ShilpSetu #VocalForLocal #HandmadeInIndia #SupportArtisans #{category}"
+            f"📲 Reply to this message or order via KalaVistar today!\n\n"
+            f"#KalaVistar #VocalForLocal #HandmadeInIndia #SupportArtisans #{category}"
         )
 
 
