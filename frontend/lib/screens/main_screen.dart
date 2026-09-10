@@ -4,7 +4,7 @@ import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
-import 'catalog_screen.dart';
+import 'artisan/my_products_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
 import 'artisan/business_assistant_screen.dart';
@@ -40,9 +40,11 @@ class _ArtisanMainScreen extends StatefulWidget {
 class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
   DateTime? _lastBackPressTime;
 
+  // Catalog tab reuses the live My Products experience (embedded mode:
+  // no inner AppBar, shell title applies) instead of hardcoded demo items.
   static const List<Widget> _screens = [
     HomeScreen(),
-    CatalogScreen(),
+    MyProductsScreen(embedded: true),
     OrdersScreen(),
     ProfileScreen(),
   ];
@@ -131,20 +133,24 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
             const SizedBox(width: 6),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
-          ),
-          backgroundColor: AppTheme.primaryTerracotta,
-          foregroundColor: Colors.white,
-          elevation: 5,
-          icon: const Icon(Icons.support_agent_rounded, size: 24),
-          label: const Text(
-            "AI व्यापार सहायक",
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-          ),
-        ),
+        // The Catalog tab hosts My Products with its own Add button, so the
+        // assistant shortcut steps aside while that tab is active.
+        floatingActionButton: nav.currentIndex == 1
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+                ),
+                backgroundColor: AppTheme.primaryTerracotta,
+                foregroundColor: Colors.white,
+                elevation: 5,
+                icon: const Icon(Icons.support_agent_rounded, size: 24),
+                label: const Text(
+                  "AI व्यापार सहायक",
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                ),
+              ),
         body: IndexedStack(
           index: nav.currentIndex,
           children: _screens,

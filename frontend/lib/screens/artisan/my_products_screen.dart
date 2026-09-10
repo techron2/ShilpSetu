@@ -9,8 +9,14 @@ import 'add_product_screen.dart';
 import 'product_detail_screen.dart';
 
 /// Displays all products belonging to the currently signed-in artisan.
+///
+/// When [embedded] is true, the screen renders as the artisan Catalog tab:
+/// no inner AppBar (the shell provides the title) while keeping the Add
+/// button and all loading/error/empty/product states.
 class MyProductsScreen extends StatefulWidget {
-  const MyProductsScreen({super.key});
+  const MyProductsScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   State<MyProductsScreen> createState() => _MyProductsScreenState();
@@ -36,6 +42,69 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final content = Consumer<ProductProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+          );
+        }
+        if (provider.errorMessage != null) {
+          return _ErrorView(
+            message: provider.errorMessage!,
+            onRetry: _refresh,
+          );
+        }
+        if (provider.products.isEmpty) {
+          return _EmptyView(
+            onAdd: () async {
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const AddProductScreen()),
+              );
+              if (added == true) _refresh();
+            },
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          color: AppTheme.primaryTerracotta,
+          child: ListView.builder(
+            padding: const EdgeInsets.only(top: 8, bottom: 100),
+            itemCount: provider.products.length,
+            itemBuilder: (context, i) =>
+                _ProductCard(
+                  product: provider.products[i],
+                  onRefresh: _refresh,
+                ),
+          ),
+        );
+      },
+    );
+
+    final addButton = FloatingActionButton.extended(
+      onPressed: () async {
+        final added = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(builder: (_) => const AddProductScreen()),
+        );
+        if (added == true) _refresh();
+      },
+      backgroundColor: AppTheme.primaryTerracotta,
+      foregroundColor: Colors.white,
+      icon: const Icon(Icons.add_rounded),
+      label: const Text('Add Product',
+          style: TextStyle(fontWeight: FontWeight.w700)),
+    );
+
+    if (widget.embedded) {
+      // Catalog tab: shell AppBar supplies the title, so only body + add.
+      return Scaffold(
+        backgroundColor: AppTheme.bgParchment,
+        body: content,
+        floatingActionButton: addButton,
+      );
+    }
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
@@ -49,59 +118,8 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final added = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const AddProductScreen()),
-          );
-          if (added == true) _refresh();
-        },
-        backgroundColor: AppTheme.primaryTerracotta,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Product',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
-      body: Consumer<ProductProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
-            );
-          }
-          if (provider.errorMessage != null) {
-            return _ErrorView(
-              message: provider.errorMessage!,
-              onRetry: _refresh,
-            );
-          }
-          if (provider.products.isEmpty) {
-            return _EmptyView(
-              onAdd: () async {
-                final added = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddProductScreen()),
-                );
-                if (added == true) _refresh();
-              },
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            color: AppTheme.primaryTerracotta,
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 100),
-              itemCount: provider.products.length,
-              itemBuilder: (context, i) =>
-                  _ProductCard(
-                    product: provider.products[i],
-                    onRefresh: _refresh,
-                  ),
-            ),
-          );
-        },
-      ),
+      floatingActionButton: addButton,
+      body: content,
     );
   }
 }
