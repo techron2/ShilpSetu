@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../services/assistant_service.dart';
 import '../../theme/app_theme.dart';
@@ -23,7 +24,8 @@ class BusinessAssistantScreen extends StatefulWidget {
   const BusinessAssistantScreen({super.key});
 
   @override
-  State<BusinessAssistantScreen> createState() => _BusinessAssistantScreenState();
+  State<BusinessAssistantScreen> createState() =>
+      _BusinessAssistantScreenState();
 }
 
 class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
@@ -41,7 +43,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     '📈 बिक्री और ऑर्डर कैसे बढ़ाएं?',
     '📦 सुरक्षित और सुंदर पैकेजिंग कैसे करें?',
     '🏙️ बड़े शहरों के ग्राहकों को कैसे आकर्षित करें?',
-    '💰 क्या मुझे कॉम्बो उपहार सेट बनाना चाहिए?'
+    '💰 क्या मुझे कॉम्बो उपहार सेट बनाना चाहिए?',
   ];
 
   final List<String> _quickPromptsEn = [
@@ -49,7 +51,7 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     '📈 How can I increase orders for my craft?',
     '📦 What are safe eco-friendly packaging tips?',
     '🏙️ How to attract buyers in metropolitan cities?',
-    '💰 Should I create gift bundle sets?'
+    '💰 Should I create gift bundle sets?',
   ];
 
   @override
@@ -58,7 +60,8 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     // Welcome message from AI Business Assistant
     _messages.add(
       ChatMessage(
-        text: 'नमस्ते शिल्पकार जी! 🙏 मैं आपका KalaVistar व्यापार सहायक हूँ। '
+        text:
+            'नमस्ते शिल्पकार जी! 🙏 मैं आपका KalaVistar व्यापार सहायक हूँ। '
             'आप मुझसे अपने शिल्प की कीमत, बिक्री बढ़ाने के तरीके, त्योहारों के ऑफर या पैकेजिंग के बारे में कोई भी सवाल पूछ सकते हैं।',
         isUser: false,
         timestamp: DateTime.now(),
@@ -90,14 +93,20 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
     if (query.isEmpty || _isSending) return;
 
     final auth = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? 'artisan_001';
+    final artisanId = auth.effectiveArtisanId;
+    if (artisanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in or use Demo Artisan Access first.'),
+        ),
+      );
+      return;
+    }
 
     setState(() {
-      _messages.add(ChatMessage(
-        text: query,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: query, isUser: true, timestamp: DateTime.now()),
+      );
       _isSending = true;
     });
     _textCtrl.clear();
@@ -113,13 +122,12 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
       if (mounted) {
         setState(() {
           _isSending = false;
-          final answer = res['answer'] as String? ??
+          final answer =
+              res['answer'] as String? ??
               'माफ़ करें, उत्तर प्राप्त करने में समस्या आई। कृपया दोबारा पूछें।';
-          _messages.add(ChatMessage(
-            text: answer,
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
+          _messages.add(
+            ChatMessage(text: answer, isUser: false, timestamp: DateTime.now()),
+          );
         });
         _scrollToBottom();
       }
@@ -127,12 +135,14 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
       if (mounted) {
         setState(() {
           _isSending = false;
-          _messages.add(ChatMessage(
-            text: 'तकनीकी समस्या आई। कृपया थोड़ी देर बाद प्रयास करें।',
-            isUser: false,
-            timestamp: DateTime.now(),
-            isError: true,
-          ));
+          _messages.add(
+            ChatMessage(
+              text: 'तकनीकी समस्या आई। कृपया थोड़ी देर बाद प्रयास करें।',
+              isUser: false,
+              timestamp: DateTime.now(),
+              isError: true,
+            ),
+          );
         });
         _scrollToBottom();
       }
@@ -171,7 +181,11 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                   color: AppTheme.primaryTerracotta.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.mic, color: AppTheme.primaryTerracotta, size: 48),
+                child: const Icon(
+                  Icons.mic,
+                  color: AppTheme.primaryTerracotta,
+                  size: 48,
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -199,7 +213,9 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                     label: const Text('दीवाली पर क्या दाम रखें?'),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _sendMessage('दीवाली के मौसम में मुझे अपने शिल्पों की कीमत क्या रखनी चाहिए?');
+                      _sendMessage(
+                        'दीवाली के मौसम में मुझे अपने शिल्पों की कीमत क्या रखनी चाहिए?',
+                      );
                     },
                   ),
                   ActionChip(
@@ -207,7 +223,9 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                     label: const Text('बिक्री कैसे बढ़ाएं?'),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _sendMessage('ऑनलाइन बिक्री और नए ग्राहक आकर्षित करने के सबसे अच्छे तरीके क्या हैं?');
+                      _sendMessage(
+                        'ऑनलाइन बिक्री और नए ग्राहक आकर्षित करने के सबसे अच्छे तरीके क्या हैं?',
+                      );
                     },
                   ),
                 ],
@@ -238,7 +256,11 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                 color: Colors.white24,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.support_agent_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             const Expanded(
@@ -247,7 +269,11 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                 children: [
                   Text(
                     'व्यापार सहायक (AI Counselor)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   Text(
                     'KalaVistar AI बिजनेस गाइड • सक्रिय',
@@ -266,7 +292,11 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
               label: Text(_selectedLang == 'hi' ? '🇮🇳 हिंदी' : '🌐 English'),
               selected: true,
               selectedColor: Colors.white.withValues(alpha: 0.2),
-              labelStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              labelStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
               side: const BorderSide(color: Colors.white38),
               onSelected: (_) {
                 setState(() {
@@ -291,9 +321,17 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 return ActionChip(
-                  label: Text(prompts[i], style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  label: Text(
+                    prompts[i],
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   backgroundColor: AppTheme.bgParchment,
-                  side: BorderSide(color: AppTheme.secondaryOchre.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: AppTheme.secondaryOchre.withValues(alpha: 0.5),
+                  ),
                   onPressed: () => _sendMessage(prompts[i]),
                 );
               },
@@ -355,10 +393,16 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
                         hintText: _selectedLang == 'hi'
                             ? 'व्यापार से जुड़ा सवाल लिखें...'
                             : 'Ask a business question...',
-                        hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
                         filled: true,
                         fillColor: AppTheme.bgParchment,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
@@ -406,7 +450,9 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
           border: Border.all(
             color: msg.isUser
                 ? Colors.transparent
-                : (msg.isError ? Colors.red.shade300 : AppTheme.secondaryOchre.withValues(alpha: 0.3)),
+                : (msg.isError
+                      ? Colors.red.shade300
+                      : AppTheme.secondaryOchre.withValues(alpha: 0.3)),
           ),
           boxShadow: [
             BoxShadow(
@@ -422,7 +468,11 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
             if (!msg.isUser) ...[
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome, color: AppTheme.secondaryOchre, size: 16),
+                  const Icon(
+                    Icons.auto_awesome,
+                    color: AppTheme.secondaryOchre,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'KalaVistar व्यापार सहायक',
@@ -459,7 +509,9 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: AppTheme.secondaryOchre.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -467,12 +519,21 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen> {
             const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryTerracotta),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.primaryTerracotta,
+              ),
             ),
             const SizedBox(width: 10),
             Text(
-              _selectedLang == 'hi' ? 'व्यापार सहायक विचार कर रहा है...' : 'Counselor is thinking...',
-              style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey.shade600),
+              _selectedLang == 'hi'
+                  ? 'व्यापार सहायक विचार कर रहा है...'
+                  : 'Counselor is thinking...',
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey.shade600,
+              ),
             ),
           ],
         ),

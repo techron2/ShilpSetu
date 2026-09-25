@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
@@ -90,10 +91,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     super.initState();
     _titleEnCtrl = TextEditingController(text: widget.initialTitleEn);
     _titleHiCtrl = TextEditingController(text: widget.initialTitleHi);
-    _descEnCtrl  = TextEditingController(text: widget.initialDescEn);
-    _descHiCtrl  = TextEditingController(text: widget.initialDescHi);
-    _priceCtrl   = TextEditingController(text: '');
-    _stockCtrl   = TextEditingController(text: '10');
+    _descEnCtrl = TextEditingController(text: widget.initialDescEn);
+    _descHiCtrl = TextEditingController(text: widget.initialDescHi);
+    _priceCtrl = TextEditingController(text: '');
+    _stockCtrl = TextEditingController(text: '10');
 
     _selectedCategory = _kCategories.contains(widget.initialCategory)
         ? widget.initialCategory
@@ -134,7 +135,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
         _priceRangeMin = (res['price_range_min'] as num?)?.round();
         _priceRangeMax = (res['price_range_max'] as num?)?.round();
         _priceExplanation = res['explanation'] as String?;
-        if (_suggestedPrice != null && (_priceCtrl.text.isEmpty || _priceCtrl.text == '350')) {
+        if (_suggestedPrice != null &&
+            (_priceCtrl.text.isEmpty || _priceCtrl.text == '350')) {
           _priceCtrl.text = _suggestedPrice.toString();
         }
       });
@@ -157,7 +159,15 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? 'artisan_001';
+    final artisanId = auth.effectiveArtisanId;
+    if (artisanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in or use Demo Artisan Access first.'),
+        ),
+      );
+      return;
+    }
 
     // Build the final saved title & description
     // When Hindi tab is active, prioritize Hindi with English subtitle
@@ -186,7 +196,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('🎉 उत्पाद सफलतापूर्वक बाज़ार में जुड़ गया! (Listing Saved!)'),
+            content: Text(
+              '🎉 उत्पाद सफलतापूर्वक बाज़ार में जुड़ गया! (Listing Saved!)',
+            ),
             backgroundColor: AppTheme.successGreen,
             duration: Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
@@ -261,9 +273,14 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryTerracotta.withValues(alpha: 0.1),
+                              color: AppTheme.primaryTerracotta.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -278,8 +295,12 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                           const SizedBox(height: 6),
                           Text(
                             _selectedLangTab == 0
-                                ? (_titleHiCtrl.text.isNotEmpty ? _titleHiCtrl.text : 'शीर्षक')
-                                : (_titleEnCtrl.text.isNotEmpty ? _titleEnCtrl.text : 'Title'),
+                                ? (_titleHiCtrl.text.isNotEmpty
+                                      ? _titleHiCtrl.text
+                                      : 'शीर्षक')
+                                : (_titleEnCtrl.text.isNotEmpty
+                                      ? _titleEnCtrl.text
+                                      : 'Title'),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -312,11 +333,17 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.secondaryOchre.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppTheme.secondaryOchre.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.mic, color: AppTheme.secondaryOchre, size: 22),
+                      const Icon(
+                        Icons.mic,
+                        color: AppTheme.secondaryOchre,
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -345,10 +372,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _langTabButton(
-                      index: 1,
-                      label: '🌐 English',
-                    ),
+                    child: _langTabButton(index: 1, label: '🌐 English'),
                   ),
                 ],
               ),
@@ -364,7 +388,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   controller: _titleHiCtrl,
                   hint: 'जैसे: हाथ से बना टेराकोटा कुल्हड़',
                   icon: Icons.title,
-                  validator: (v) => v == null || v.trim().isEmpty ? 'कृपया शीर्षक दर्ज करें' : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'कृपया शीर्षक दर्ज करें'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -375,7 +401,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   hint: 'शिल्प, सामग्री और पारंपरिक कला के बारे में लिखें...',
                   icon: Icons.description_outlined,
                   maxLines: 4,
-                  validator: (v) => v == null || v.trim().isEmpty ? 'कृपया विवरण दर्ज करें' : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'कृपया विवरण दर्ज करें'
+                      : null,
                 ),
               ] else ...[
                 // English Fields
@@ -385,7 +413,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   controller: _titleEnCtrl,
                   hint: 'e.g. Handcrafted Terracotta Chai Kulhad Set',
                   icon: Icons.title,
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Please enter English title' : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Please enter English title'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -396,7 +426,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   hint: 'Describe materials, heritage craft, and uses...',
                   icon: Icons.description_outlined,
                   maxLines: 4,
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Please enter English description' : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Please enter English description'
+                      : null,
                 ),
               ],
 
@@ -427,7 +459,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         'Other': '150',
                       };
                       if (_materialCostCtrl.text.isEmpty ||
-                          defaultCosts.values.contains(_materialCostCtrl.text)) {
+                          defaultCosts.values.contains(
+                            _materialCostCtrl.text,
+                          )) {
                         _materialCostCtrl.text = defaultCosts[v] ?? '80';
                       }
                     });
@@ -479,7 +513,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                           icon: Icons.currency_rupee,
                           keyboardType: TextInputType.number,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'कीमत लिखें';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'कीमत लिखें';
+                            }
                             final n = double.tryParse(v.trim());
                             if (n == null || n <= 0) return 'अमान्य कीमत';
                             return null;
@@ -501,7 +537,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                           icon: Icons.inventory_2_outlined,
                           keyboardType: TextInputType.number,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'संख्या लिखें';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'संख्या लिखें';
+                            }
                             final n = int.tryParse(v.trim());
                             if (n == null || n < 0) return 'अमान्य संख्या';
                             return null;
@@ -533,11 +571,17 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                     ? const SizedBox(
                         height: 24,
                         width: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
                       )
                     : const Text(
                         'दुकान में जोड़ें (Save Product to Store)',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                 onPressed: provider.isLoading ? null : _saveProduct,
               ),
@@ -621,7 +665,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppTheme.primaryTerracotta, width: 2),
+        borderSide: const BorderSide(
+          color: AppTheme.primaryTerracotta,
+          width: 2,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
@@ -634,7 +681,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFBF8F3),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: AppTheme.secondaryOchre.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -655,7 +705,11 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   color: AppTheme.primaryTerracotta.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.auto_awesome, color: AppTheme.primaryTerracotta, size: 22),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: AppTheme.primaryTerracotta,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -682,7 +736,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                 const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryTerracotta),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppTheme.primaryTerracotta,
+                  ),
                 ),
             ],
           ),
@@ -728,10 +785,15 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                       initialValue: _craftRegion,
                       decoration: _fieldDec(icon: Icons.location_on_outlined),
                       items: _kRegions
-                          .map((r) => DropdownMenuItem(
-                                value: r,
-                                child: Text(r, style: const TextStyle(fontSize: 13)),
-                              ))
+                          .map(
+                            (r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(
+                                r,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) {
                         if (v != null) {
@@ -754,7 +816,11 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
             children: [
               const Text(
                 'आकार (Size): ',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.darkIndigo),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.darkIndigo,
+                ),
               ),
               const SizedBox(width: 6),
               ...['small', 'medium', 'large'].map((sizeKey) {
@@ -778,12 +844,16 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                     selectedColor: AppTheme.primaryTerracotta,
                     labelStyle: TextStyle(
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected ? Colors.white : AppTheme.darkIndigo,
                     ),
                     backgroundColor: Colors.white,
                     side: BorderSide(
-                      color: isSelected ? AppTheme.primaryTerracotta : Colors.grey.shade300,
+                      color: isSelected
+                          ? AppTheme.primaryTerracotta
+                          : Colors.grey.shade300,
                     ),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -802,8 +872,13 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.primaryTerracotta,
                 side: const BorderSide(color: AppTheme.primaryTerracotta),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text(
@@ -823,7 +898,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppTheme.secondaryOchre.withValues(alpha: 0.3),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -844,11 +921,20 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                       const SizedBox(width: 14),
                       if (_priceRangeMin != null && _priceRangeMax != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppTheme.secondaryOchre.withValues(alpha: 0.18),
+                            color: AppTheme.secondaryOchre.withValues(
+                              alpha: 0.18,
+                            ),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.5)),
+                            border: Border.all(
+                              color: AppTheme.secondaryOchre.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
                           ),
                           child: Text(
                             'दायरा: ₹$_priceRangeMin – ₹$_priceRangeMax',
@@ -865,11 +951,16 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   const SizedBox(height: 10),
 
                   // Explanation
-                  if (_priceExplanation != null && _priceExplanation!.isNotEmpty)
+                  if (_priceExplanation != null &&
+                      _priceExplanation!.isNotEmpty)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.info_outline, size: 16, color: AppTheme.primaryTerracotta),
+                        const Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: AppTheme.primaryTerracotta,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -894,7 +985,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('🎉 ₹$_suggestedPrice मूल्य उत्पाद के लिए लागू कर दिया गया है!'),
+                          content: Text(
+                            '🎉 ₹$_suggestedPrice मूल्य उत्पाद के लिए लागू कर दिया गया है!',
+                          ),
                           duration: const Duration(seconds: 2),
                           backgroundColor: AppTheme.successGreen,
                           behavior: SnackBarBehavior.floating,
@@ -906,8 +999,13 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.darkIndigo,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ],
@@ -928,7 +1026,11 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
           const SizedBox(height: 10),
           Text(
             '* आप नीचे अपनी सुविधानुसार इस कीमत को कभी भी बदल सकते हैं। (You can edit the price below before saving).',
-            style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              fontSize: 11.5,
+              color: Colors.grey.shade700,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),

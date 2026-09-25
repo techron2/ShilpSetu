@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../theme/app_theme.dart';
@@ -22,9 +23,7 @@ class MainScreen extends StatelessWidget {
     final auth = context.watch<AppAuthProvider>();
     final isBuyer = auth.userModel?.isBuyer ?? false;
 
-    return isBuyer
-        ? const _BuyerMainScreen()
-        : const _ArtisanMainScreen();
+    return isBuyer ? const _BuyerMainScreen() : const _ArtisanMainScreen();
   }
 }
 
@@ -68,11 +67,15 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
           nav.setIndex(0);
         } else {
           final now = DateTime.now();
-          if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) >
+                  const Duration(seconds: 2)) {
             _lastBackPressTime = now;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text("ऐप से बाहर निकलने के लिए दोबारा बैक दबाएं (Press back again to exit)"),
+                content: Text(
+                  "ऐप से बाहर निकलने के लिए दोबारा बैक दबाएं (Press back again to exit)",
+                ),
                 duration: Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
@@ -92,7 +95,11 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
                   color: Colors.white24,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.palette_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.palette_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -111,7 +118,11 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
           actions: [
             IconButton(
               tooltip: "बिज़नेस एनालिटिक्स (Business Analytics)",
-              icon: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 26),
+              icon: const Icon(
+                Icons.bar_chart_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
@@ -119,15 +130,25 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
             ),
             IconButton(
               tooltip: "वर्चुअल क्लस्टर (Virtual Cluster)",
-              icon: const Icon(Icons.hub_rounded, color: Colors.white, size: 24),
+              icon: const Icon(
+                Icons.hub_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
               onPressed: () => VirtualClusterDialog.show(context),
             ),
             IconButton(
               tooltip: "व्यापार सहायक (AI Business Assistant)",
-              icon: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 28),
+              icon: const Icon(
+                Icons.support_agent_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const BusinessAssistantScreen(),
+                ),
               ),
             ),
             const SizedBox(width: 6),
@@ -138,9 +159,12 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
         floatingActionButton: nav.currentIndex == 1
             ? null
             : FloatingActionButton.extended(
+                heroTag: 'artisan_business_assistant',
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const BusinessAssistantScreen(),
+                  ),
                 ),
                 backgroundColor: AppTheme.primaryTerracotta,
                 foregroundColor: Colors.white,
@@ -151,10 +175,7 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                 ),
               ),
-        body: IndexedStack(
-          index: nav.currentIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: nav.currentIndex, children: _screens),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             boxShadow: [
@@ -167,7 +188,8 @@ class _ArtisanMainScreenState extends State<_ArtisanMainScreen> {
           ),
           child: BottomNavigationBar(
             currentIndex: nav.currentIndex,
-            onTap: (index) => context.read<NavigationProvider>().setIndex(index),
+            onTap: (index) =>
+                context.read<NavigationProvider>().setIndex(index),
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined, size: 28),
@@ -237,7 +259,9 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
           setState(() => _currentIndex = 0);
         } else {
           final now = DateTime.now();
-          if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) >
+                  const Duration(seconds: 2)) {
             _lastBackPressTime = now;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -253,7 +277,7 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
       },
       child: Scaffold(
         appBar: _currentIndex == 0
-            ? null  // BuyerHomeScreen has its own SliverAppBar
+            ? null // BuyerHomeScreen has its own SliverAppBar
             : AppBar(
                 title: Row(
                   children: [
@@ -263,8 +287,11 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
                         color: Colors.white24,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.shopping_bag_outlined,
-                          color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -287,7 +314,10 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
                     padding: const EdgeInsets.only(right: 12),
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(20),
@@ -295,15 +325,19 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.shopping_bag_rounded,
-                                color: Colors.white, size: 14),
+                            const Icon(
+                              Icons.shopping_bag_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               name.split(' ').first,
                               style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700),
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),
@@ -312,10 +346,7 @@ class _BuyerMainScreenState extends State<_BuyerMainScreen> {
                   ),
                 ],
               ),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             boxShadow: [

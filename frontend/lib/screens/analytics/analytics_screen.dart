@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 
 /// Analytics dashboard screen for artisans.
@@ -31,8 +33,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final user = Provider.of<AppAuthProvider>(context, listen: false).userModel;
-    final aid = widget.artisanId ?? user?.uid ?? 'artisan_demo_01';
+    final auth = Provider.of<AppAuthProvider>(context, listen: false);
+    final aid = widget.artisanId ?? auth.effectiveArtisanId;
+
+    if (aid == null) {
+      if (!mounted) return;
+      setState(() {
+        _analytics = null;
+        _trustScore = null;
+        _isLoading = false;
+      });
+      return;
+    }
 
     final results = await Future.wait([
       BuyerService.instance.getAnalyticsSummary(aid),
@@ -67,8 +79,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryTerracotta,
+              ),
             )
+          : _analytics == null
+          ? _buildUnavailableState()
           : RefreshIndicator(
               onRefresh: _loadData,
               color: AppTheme.primaryTerracotta,
@@ -78,6 +94,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildDataSourceNotice(),
+                    const SizedBox(height: 12),
                     _buildHeaderBanner(),
                     const SizedBox(height: 16),
                     _buildKpiGrid(),
@@ -95,9 +113,144 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
+  String get _dataSource => _analytics?['_source']?.toString() ?? 'unknown';
+  bool get _usesLiveSales => _dataSource == 'firestore';
+  bool get _hasTrustHistory {
+    final explicit = _trustScore?['has_history'];
+    if (explicit is bool) return explicit;
+    return ((_trustScore?['total_orders'] as num?)?.toInt() ?? 0) > 0;
+  }
+
+  Widget _buildUnavailableState() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: AppTheme.primaryTerracotta,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(28),
+        children: [
+          const SizedBox(height: 120),
+          Icon(
+            Icons.query_stats_rounded,
+            size: 68,
+            color: AppTheme.primaryTerracotta.withValues(alpha: 0.45),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Analytics are unavailable',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkIndigo,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Check the KalaVistar backend connection, then try again. No sample totals are shown as live data.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry analytics'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataSourceNotice() {
+    late final IconData icon;
+    late final Color color;
+    late final String title;
+    late final String detail;
+
+    switch (_dataSource) {
+      case 'firestore':
+        icon = Icons.cloud_done_rounded;
+        color = AppTheme.successGreen;
+        title = 'Live sales data';
+        detail = 'Calculated from recorded KalaVistar orders';
+        break;
+      case 'baseline':
+        icon = Icons.science_outlined;
+        color = AppTheme.secondaryOchre;
+        title = 'Demo sales snapshot';
+        detail = 'Sample history for storytelling — not live orders';
+        break;
+      case 'mock':
+        icon = Icons.science_outlined;
+        color = AppTheme.secondaryOchre;
+        title = 'Demo sales snapshot';
+        detail = 'Backend demo data — not live orders';
+        break;
+      case 'error_fallback':
+        icon = Icons.cloud_off_rounded;
+        color = AppTheme.warningRed;
+        title = 'Demo fallback data';
+        detail = 'Live analytics could not be reached';
+        break;
+      default:
+        icon = Icons.info_outline_rounded;
+        color = const Color(0xFF667085);
+        title = 'Analytics source unknown';
+        detail = 'Refresh before using these figures';
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 21, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  detail,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF667085),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Header Banner ───────────────────────────────────────────────────────────
   Widget _buildHeaderBanner() {
-    final growth = (_analytics?['revenue_growth_pct'] as num?)?.toDouble() ?? 0.0;
+    final growth =
+        (_analytics?['revenue_growth_pct'] as num?)?.toDouble() ?? 0.0;
     final isPositive = growth >= 0;
 
     return Container(
@@ -123,13 +276,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Sales & Growth Performance',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                Text(
+                  _usesLiveSales
+                      ? 'Sales & Growth Performance'
+                      : 'Sample Sales & Growth Story',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '₹${((_analytics?['total_revenue'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(0)}',
+                  formatInr(
+                    ((_analytics?['total_revenue'] as num?)?.toDouble() ?? 0.0),
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -140,7 +301,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -149,7 +313,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                            isPositive
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
                             color: Colors.white,
                             size: 16,
                           ),
@@ -176,7 +342,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               color: Colors.white.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 36),
+            child: const Icon(
+              Icons.bar_chart_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
           ),
         ],
       ),
@@ -187,9 +357,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildKpiGrid() {
     final totalOrders = _analytics?['total_orders'] ?? 0;
     final aov = (_analytics?['average_order_value'] as num?)?.toDouble() ?? 0.0;
-    final bestSeller = _analytics?['best_selling_product'] as Map<String, dynamic>?;
+    final bestSeller =
+        _analytics?['best_selling_product'] as Map<String, dynamic>?;
     final bestTitle = bestSeller?['title'] ?? 'Handcrafted Artifacts';
     final bestUnits = bestSeller?['units_sold'] ?? 0;
+    final trustScore = _hasTrustHistory
+        ? (_trustScore?['trust_score'] as num?)?.toDouble()
+        : null;
+    final trustBadge = _hasTrustHistory
+        ? (_trustScore?['badge']?.toString())
+        : null;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -210,22 +387,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           icon: Icons.receipt_long_outlined,
           color: const Color(0xFF1565C0),
           label: 'Avg Order Value',
-          value: '₹${aov.toStringAsFixed(0)}',
+          value: formatInr(aov),
           subtext: 'per transaction',
         ),
         _kpiCard(
           icon: Icons.star_outline_rounded,
           color: const Color(0xFFD4AF37),
           label: 'Best Seller',
-          value: bestTitle.length > 15 ? '${bestTitle.substring(0, 14)}…' : bestTitle,
+          value: bestTitle.length > 15
+              ? '${bestTitle.substring(0, 14)}…'
+              : bestTitle,
           subtext: '$bestUnits units sold',
         ),
         _kpiCard(
           icon: Icons.verified_outlined,
           color: AppTheme.primaryTerracotta,
           label: 'Trust Score',
-          value: '${_trustScore?['trust_score'] ?? 4.8} / 5.0',
-          subtext: '${_trustScore?['badge'] ?? 'Master Artisan'}',
+          value: trustScore == null
+              ? '—'
+              : '${trustScore.toStringAsFixed(1)} / 5.0',
+          subtext: trustBadge == null || trustBadge.isEmpty
+              ? 'No trust history yet'
+              : trustBadge,
         ),
       ],
     );
@@ -307,13 +490,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       return const SizedBox.shrink();
     }
 
-    final double maxRevenue = trends.fold<double>(
-      1000.0,
-      (max, item) {
-        final rev = (item['revenue'] as num?)?.toDouble() ?? 0.0;
-        return rev > max ? rev : max;
-      },
-    );
+    final double maxRevenue = trends.fold<double>(1000.0, (max, item) {
+      final rev = (item['revenue'] as num?)?.toDouble() ?? 0.0;
+      return rev > max ? rev : max;
+    });
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -354,7 +534,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryTerracotta.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -405,8 +588,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -416,12 +603,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         if (value >= 1000) {
                           return Text(
                             '${(value / 1000).toStringAsFixed(0)}k',
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF8D7B74)),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF8D7B74),
+                            ),
                           );
                         }
                         return Text(
                           value.toStringAsFixed(0),
-                          style: const TextStyle(fontSize: 10, color: Color(0xFF8D7B74)),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF8D7B74),
+                          ),
                         );
                       },
                     ),
@@ -439,7 +632,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               trends[idx]['month']?.toString() ?? '',
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 color: isSelected
                                     ? AppTheme.primaryTerracotta
                                     : const Color(0xFF6B5E57),
@@ -456,10 +651,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxRevenue / 4,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: const Color(0xFFF0EBE6),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: const Color(0xFFF0EBE6), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: List.generate(trends.length, (i) {
@@ -472,13 +665,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         toY: rev,
                         gradient: LinearGradient(
                           colors: isTouched
-                              ? [const Color(0xFFD4AF37), AppTheme.primaryTerracotta]
-                              : [AppTheme.primaryTerracotta, const Color(0xFFE07A5F)],
+                              ? [
+                                  const Color(0xFFD4AF37),
+                                  AppTheme.primaryTerracotta,
+                                ]
+                              : [
+                                  AppTheme.primaryTerracotta,
+                                  const Color(0xFFE07A5F),
+                                ],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         ),
                         width: 22,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6),
+                        ),
                       ),
                     ],
                   );
@@ -493,10 +694,53 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   // ── Trust & Reliability Card ────────────────────────────────────────────────
   Widget _buildTrustReliabilityCard() {
-    final compRate = (_trustScore?['completion_rate_pct'] as num?)?.toInt() ?? 100;
-    final rating = (_trustScore?['rating'] as num?)?.toDouble() ?? 4.8;
-    final trustScore = (_trustScore?['trust_score'] as num?)?.toDouble() ?? 4.8;
-    final badge = _trustScore?['badge'] ?? 'Master Artisan';
+    if (_trustScore == null || !_hasTrustHistory) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9F6F0),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE5DDD5)),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.shield_outlined, color: Color(0xFF8D7B74), size: 24),
+            SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Trust history not available yet',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2C221E),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Completed orders and buyer ratings will build this score over time.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF7A6B63),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final compRate = (_trustScore?['completion_rate_pct'] as num?)?.toInt();
+    final rating = (_trustScore?['rating'] as num?)?.toDouble();
+    final trustScore = (_trustScore?['trust_score'] as num?)?.toDouble();
+    final badge = _trustScore?['badge']?.toString();
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -510,7 +754,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.shield_rounded, color: AppTheme.successGreen, size: 22),
+              const Icon(
+                Icons.shield_rounded,
+                color: AppTheme.successGreen,
+                size: 22,
+              ),
               const SizedBox(width: 8),
               const Text(
                 'Trust & Artisan Reliability',
@@ -522,14 +770,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFD4AF37)),
                 ),
                 child: Text(
-                  badge,
+                  badge == null || badge.isEmpty ? 'Building history' : badge,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -543,15 +794,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             children: [
               Expanded(
-                child: _trustMetricCol('Order Fulfillment', '$compRate%', compRate / 100),
+                child: _trustMetricCol(
+                  'Order Fulfillment',
+                  compRate == null ? '—' : '$compRate%',
+                  compRate == null ? null : compRate / 100,
+                ),
               ),
               Container(width: 1, height: 40, color: const Color(0xFFD9D0C7)),
               Expanded(
-                child: _trustMetricCol('Buyer Rating', '★ $rating', rating / 5.0),
+                child: _trustMetricCol(
+                  'Buyer Rating',
+                  rating == null ? '—' : '★ ${rating.toStringAsFixed(1)}',
+                  rating == null ? null : rating / 5.0,
+                ),
               ),
               Container(width: 1, height: 40, color: const Color(0xFFD9D0C7)),
               Expanded(
-                child: _trustMetricCol('Trust Score', '$trustScore / 5', trustScore / 5.0),
+                child: _trustMetricCol(
+                  'Trust Score',
+                  trustScore == null
+                      ? '—'
+                      : '${trustScore.toStringAsFixed(1)} / 5',
+                  trustScore == null ? null : trustScore / 5.0,
+                ),
               ),
             ],
           ),
@@ -560,7 +825,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _trustMetricCol(String label, String value, double progress) {
+  Widget _trustMetricCol(String label, String value, double? progress) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(
@@ -583,10 +848,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
+              value: (progress ?? 0).clamp(0.0, 1.0),
               minHeight: 4,
               backgroundColor: const Color(0xFFE8E0D8),
-              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryTerracotta),
+              valueColor: const AlwaysStoppedAnimation(
+                AppTheme.primaryTerracotta,
+              ),
             ),
           ),
         ],
@@ -596,7 +863,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   // ── Order Status Breakdown ──────────────────────────────────────────────────
   Widget _buildStatusBreakdownCard() {
-    final statusMap = (_analytics?['order_status_counts'] as Map<String, dynamic>?) ?? {};
+    final statusMap =
+        (_analytics?['order_status_counts'] as Map<String, dynamic>?) ?? {};
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -608,9 +876,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Live Pipeline Status',
-            style: TextStyle(
+          Text(
+            _usesLiveSales ? 'Live Order Pipeline' : 'Sample Order Pipeline',
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: Color(0xFF2C221E),
@@ -619,13 +887,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _statusChip('Pending', statusMap['pending'] ?? 0, const Color(0xFFF59E0B)),
+              _statusChip(
+                'Pending',
+                statusMap['pending'] ?? 0,
+                const Color(0xFFF59E0B),
+              ),
               const SizedBox(width: 8),
-              _statusChip('Confirmed', statusMap['confirmed'] ?? 0, const Color(0xFF3B82F6)),
+              _statusChip(
+                'Confirmed',
+                statusMap['confirmed'] ?? 0,
+                const Color(0xFF3B82F6),
+              ),
               const SizedBox(width: 8),
-              _statusChip('Shipped', statusMap['shipped'] ?? 0, const Color(0xFF8B5CF6)),
+              _statusChip(
+                'Shipped',
+                statusMap['shipped'] ?? 0,
+                const Color(0xFF8B5CF6),
+              ),
               const SizedBox(width: 8),
-              _statusChip('Delivered', statusMap['delivered'] ?? 0, const Color(0xFF10B981)),
+              _statusChip(
+                'Delivered',
+                statusMap['delivered'] ?? 0,
+                const Color(0xFF10B981),
+              ),
             ],
           ),
         ],

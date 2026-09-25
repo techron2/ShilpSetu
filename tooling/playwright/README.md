@@ -48,6 +48,14 @@ Keep the viewports in separate sessions. Resizing a running mobile-emulated
 Flutter Web page can briefly produce invalid browser keyboard insets and is not
 a trustworthy application regression.
 
+The CLI profiles intentionally combine an exact mobile-sized viewport, an
+Android Chrome user agent, and touch input without Playwright's `isMobile`
+screen override. On Windows display scaling that override can make Flutter Web
+receive a fractional visual viewport during startup and log a false negative
+keyboard-insets assertion. The resulting reference surface still reports
+412×915 (or 360×800), one touch point, and the mobile user agent; it is not
+presented as proof of Android-native behaviour.
+
 Prefer `snapshot`, then `console`/`requests`, and use `screenshot` only for a
 baseline, meaningful visual change, or checkpoint acceptance. CLI artifacts are
 ignored by Git under `.playwright-cli/` and `output/playwright/`.

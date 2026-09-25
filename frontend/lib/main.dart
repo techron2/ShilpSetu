@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+
 import 'firebase_options.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/auth_provider.dart';
@@ -14,9 +15,7 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -59,6 +58,10 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Widget tests and placeholder builds can intentionally run without a
+    // Firebase app. Keep the unauthenticated entry point usable there.
+    if (Firebase.apps.isEmpty) return const AuthWrapper();
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -66,7 +69,9 @@ class AuthGate extends StatelessWidget {
           return const Scaffold(
             backgroundColor: AppTheme.bgParchment,
             body: Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryTerracotta,
+              ),
             ),
           );
         }
@@ -80,7 +85,9 @@ class AuthGate extends StatelessWidget {
               context.read<NavigationProvider>().setIndex(0);
               final authUser = context.read<AppAuthProvider>().userModel;
               if (authUser != null) {
-                context.read<LanguageProvider>().syncFromProfile(authUser.languagePreference);
+                context.read<LanguageProvider>().syncFromProfile(
+                  authUser.languagePreference,
+                );
               }
             }
           });

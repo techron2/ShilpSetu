@@ -103,8 +103,11 @@ def get_analytics_summary():
             pid = str(o.get('product_id', 'unknown'))
             ptitle = o.get('product_title') or o.get('item_name') or f"Product {pid[:6]}"
 
-            # Only count completed/confirmed revenue
-            if status in ['confirmed', 'shipped', 'delivered', 'pending']:
+            # Recognise revenue only after an order is accepted. Pending and
+            # cancelled orders remain visible in pipeline counts, while paid
+            # orders must not disappear from sales totals.
+            is_revenue_order = status in ['confirmed', 'shipped', 'delivered', 'paid']
+            if is_revenue_order:
                 total_revenue += price
                 product_sales[pid]["units"] += qty
                 product_sales[pid]["revenue"] += price
@@ -122,7 +125,7 @@ def get_analytics_summary():
             elif isinstance(cat, datetime):
                 created_dt = cat
 
-            if created_dt:
+            if created_dt and is_revenue_order:
                 m_label = created_dt.strftime('%b')
                 monthly_buckets[m_label]["revenue"] += price
                 monthly_buckets[m_label]["orders"] += 1
@@ -131,11 +134,6 @@ def get_analytics_summary():
                     rev_this_month += price
                 elif created_dt.year == prev_year and created_dt.month == prev_month:
                     rev_last_month += price
-
-        # If sparse history, ensure current month has at least current orders revenue
-        if rev_this_month == 0.0 and total_revenue > 0:
-            rev_this_month = total_revenue * 0.4
-            rev_last_month = total_revenue * 0.3
 
         growth_pct = 0.0
         if rev_last_month > 0:
@@ -170,17 +168,6 @@ def get_analytics_summary():
                 "revenue": round(b["revenue"], 1),
                 "orders": b["orders"]
             })
-
-        # If trend is empty, fill with realistic baseline
-        if all(t["revenue"] == 0.0 for t in monthly_trend):
-            monthly_trend = [
-                {"month": "Apr", "revenue": round(total_revenue * 0.1, 1), "orders": max(1, total_orders // 6)},
-                {"month": "May", "revenue": round(total_revenue * 0.15, 1), "orders": max(1, total_orders // 5)},
-                {"month": "Jun", "revenue": round(total_revenue * 0.12, 1), "orders": max(1, total_orders // 6)},
-                {"month": "Jul", "revenue": round(total_revenue * 0.18, 1), "orders": max(1, total_orders // 4)},
-                {"month": "Aug", "revenue": round(total_revenue * 0.22, 1), "orders": max(1, total_orders // 4)},
-                {"month": "Sep", "revenue": round(total_revenue * 0.23, 1), "orders": max(1, total_orders // 4)},
-            ]
 
         data = {
             "artisan_id": artisan_id,

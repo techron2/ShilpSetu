@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+
+import '../config/demo_identity.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -16,17 +18,24 @@ import '../services/auth_service.dart';
 class AppAuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
-  User?      _firebaseUser;
+  User? _firebaseUser;
   UserModel? _userModel;
-  bool       _isLoading = false;
-  String?    _errorMessage;
+  bool _isLoading = false;
+  String? _errorMessage;
+  bool _isDemoMode = false;
 
   // ── Getters ──────────────────────────────────────────────────────────────
-  User?      get firebaseUser  => _firebaseUser;
-  UserModel? get userModel     => _userModel;
-  bool       get isLoading     => _isLoading;
-  String?    get errorMessage  => _errorMessage;
-  bool       get isSignedIn    => _firebaseUser != null;
+  User? get firebaseUser => _firebaseUser;
+  UserModel? get userModel => _userModel;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isDemoMode => _isDemoMode;
+  bool get isSignedIn => _firebaseUser != null || _userModel != null;
+  String? get effectiveUserId => _userModel?.uid ?? _firebaseUser?.uid;
+  String? get effectiveArtisanId {
+    if (_userModel != null && !_userModel!.isArtisan) return null;
+    return effectiveUserId;
+  }
 
   AppAuthProvider() {
     // Only subscribe to auth changes when Firebase is actually initialized.
@@ -39,7 +48,12 @@ class AppAuthProvider extends ChangeNotifier {
   // ── Internal ─────────────────────────────────────────────────────────────
   Future<void> _onAuthStateChanged(User? user) async {
     _firebaseUser = user;
-    _userModel    = null;
+    // Firebase emits a signed-out event in the browser while the explicit
+    // local demo session is active. Keep that deterministic demo identity.
+    if (user == null && _isDemoMode) return;
+
+    _isDemoMode = false;
+    _userModel = null;
     if (user != null) {
       try {
         _userModel = await _authService.fetchUserModel(user.uid);
@@ -78,6 +92,7 @@ class AppAuthProvider extends ChangeNotifier {
     required String role,
     required String phoneNumber,
   }) async {
+    _isDemoMode = false;
     _setLoading(true);
     _setError(null);
     try {
@@ -122,10 +137,9 @@ class AppAuthProvider extends ChangeNotifier {
 
   /// Sign in with email/password.
   /// Returns `true` on success, `false` on error (check [errorMessage]).
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
+    _isDemoMode = false;
+    _userModel = null;
     _setLoading(true);
     _setError(null);
     try {
@@ -148,19 +162,26 @@ class AppAuthProvider extends ChangeNotifier {
     required String phoneNumber,
     required AuthCredential credential,
   }) async {
+    _isDemoMode = false;
     _setLoading(true);
     _setError(null);
     try {
       // 1. Check if user exists in Firestore FIRST
-      final existingUser = await _authService.findUserByPhoneNumber(phoneNumber);
+      final existingUser = await _authService.findUserByPhoneNumber(
+        phoneNumber,
+      );
       if (existingUser == null) {
-        _setError('No account found with this phone number. Please sign up first using email, or check the number entered.');
+        _setError(
+          'No account found with this phone number. Please sign up first using email, or check the number entered.',
+        );
         _setLoading(false);
         return false;
       }
 
       // 2. Complete Auth sign in with Phone credential
-      final authResult = await FirebaseAuth.instance.signInWithCredential(credential);
+      final authResult = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
       if (authResult.user != null) {
         _firebaseUser = authResult.user;
         _userModel = existingUser;
@@ -185,12 +206,17 @@ class AppAuthProvider extends ChangeNotifier {
 
   /// Direct manual phone login for testing/demo when account exists
   Future<bool> signInWithExistingPhone(String phoneNumber) async {
+    _isDemoMode = false;
     _setLoading(true);
     _setError(null);
     try {
-      final existingUser = await _authService.findUserByPhoneNumber(phoneNumber);
+      final existingUser = await _authService.findUserByPhoneNumber(
+        phoneNumber,
+      );
       if (existingUser == null) {
-        _setError('No account found with this phone number. Please sign up first using email, or check the number entered.');
+        _setError(
+          'No account found with this phone number. Please sign up first using email, or check the number entered.',
+        );
         _setLoading(false);
         return false;
       }
@@ -205,10 +231,24 @@ class AppAuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Starts the deterministic artisan demo without pretending Firebase auth.
+  void enterArtisanDemo() {
+    _firebaseUser = null;
+    _userModel = DemoIdentity.artisan;
+    _isDemoMode = true;
+    _isLoading = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   /// Sign out and clear local state.
   Future<void> signOut() async {
-    await _authService.signOut();
-    _userModel    = null;
+    if (!_isDemoMode && Firebase.apps.isNotEmpty) {
+      await _authService.signOut();
+    }
+    _firebaseUser = null;
+    _userModel = null;
+    _isDemoMode = false;
     _errorMessage = null;
     notifyListeners();
   }

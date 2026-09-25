@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
@@ -10,7 +11,10 @@ class VirtualClusterDialog extends StatefulWidget {
   final VoidCallback? onClusterUpdated;
   const VirtualClusterDialog({super.key, this.onClusterUpdated});
 
-  static Future<void> show(BuildContext context, {VoidCallback? onClusterUpdated}) {
+  static Future<void> show(
+    BuildContext context, {
+    VoidCallback? onClusterUpdated,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -60,8 +64,12 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
   }
 
   Future<void> _fetchCluster() async {
-    final user = Provider.of<AppAuthProvider>(context, listen: false).userModel;
-    final aid = user?.uid ?? 'test_artisan_phase4';
+    final auth = Provider.of<AppAuthProvider>(context, listen: false);
+    final aid = auth.effectiveArtisanId;
+    if (aid == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
     final cluster = await BuyerService.instance.getClusterByArtisan(aid);
     if (!mounted) return;
@@ -80,8 +88,20 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
     }
 
     setState(() => _isSaving = true);
-    final user = Provider.of<AppAuthProvider>(context, listen: false).userModel;
-    final aid = user?.uid ?? 'test_artisan_phase4';
+    final auth = Provider.of<AppAuthProvider>(context, listen: false);
+    final user = auth.userModel;
+    final aid = auth.effectiveArtisanId;
+    if (aid == null) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in or use Demo Artisan Access first.'),
+          ),
+        );
+      }
+      return;
+    }
     final aname = user?.name ?? 'Lead Artisan';
     final cap = int.tryParse(_capacityCtrl.text.trim()) ?? 300;
 
@@ -108,24 +128,36 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create cluster')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to create cluster')));
     }
   }
 
   Future<void> _handleJoinCluster() async {
     final targetId = _joinIdCtrl.text.trim();
     if (targetId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter Cluster ID')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter Cluster ID')));
       return;
     }
 
     setState(() => _isSaving = true);
-    final user = Provider.of<AppAuthProvider>(context, listen: false).userModel;
-    final aid = user?.uid ?? 'test_artisan_phase4';
+    final auth = Provider.of<AppAuthProvider>(context, listen: false);
+    final user = auth.userModel;
+    final aid = auth.effectiveArtisanId;
+    if (aid == null) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in or use Demo Artisan Access first.'),
+          ),
+        );
+      }
+      return;
+    }
     final aname = user?.name ?? 'Artisan Member';
     final cap = int.tryParse(_joinCapacityCtrl.text.trim()) ?? 200;
 
@@ -150,7 +182,9 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to join cluster. Check Cluster ID.')),
+        const SnackBar(
+          content: Text('Failed to join cluster. Check Cluster ID.'),
+        ),
       );
     }
   }
@@ -186,7 +220,11 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             const SizedBox(height: 16),
             const Row(
               children: [
-                Icon(Icons.hub_rounded, color: AppTheme.primaryTerracotta, size: 28),
+                Icon(
+                  Icons.hub_rounded,
+                  color: AppTheme.primaryTerracotta,
+                  size: 28,
+                ),
                 SizedBox(width: 10),
                 Text(
                   'Virtual Artisan Cluster',
@@ -205,7 +243,9 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryTerracotta,
+                  ),
                 ),
               )
             else if (_currentCluster != null)
@@ -251,7 +291,11 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
                   color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.verified_rounded, color: Color(0xFF8C6E14), size: 24),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: Color(0xFF8C6E14),
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -260,9 +304,19 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF2C221E)),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2C221E),
+                      ),
                     ),
-                    Text('$craft • $region', style: const TextStyle(fontSize: 12, color: Color(0xFF6B5E57))),
+                    Text(
+                      '$craft • $region',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B5E57),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -281,22 +335,36 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
               children: [
                 Column(
                   children: [
-                    const Text('Combined Capacity', style: TextStyle(fontSize: 11, color: Color(0xFF8D7B74))),
+                    const Text(
+                      'Combined Capacity',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF8D7B74)),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       '$cap units/mo',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primaryTerracotta),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryTerracotta,
+                      ),
                     ),
                   ],
                 ),
                 Container(width: 1, height: 32, color: const Color(0xFFEDE5DF)),
                 Column(
                   children: [
-                    const Text('Artisan Members', style: TextStyle(fontSize: 11, color: Color(0xFF8D7B74))),
+                    const Text(
+                      'Artisan Members',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF8D7B74)),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       '${members.length} artisans',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF2C221E)),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2C221E),
+                      ),
                     ),
                   ],
                 ),
@@ -304,21 +372,35 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             ),
           ),
           const SizedBox(height: 14),
-          const Text('Member Artisans:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          const Text(
+            'Member Artisans:',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 6),
-          ...members.take(3).map((m) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              children: [
-                const Icon(Icons.person_pin_rounded, size: 16, color: AppTheme.primaryTerracotta),
-                const SizedBox(width: 6),
-                Text(
-                  '${m['name'] ?? 'Artisan'} (${m['capacity'] ?? 0} units)',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF2C221E)),
+          ...members
+              .take(3)
+              .map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person_pin_rounded,
+                        size: 16,
+                        color: AppTheme.primaryTerracotta,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${m['name'] ?? 'Artisan'} (${m['capacity'] ?? 0} units)',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF2C221E),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          )),
+              ),
         ],
       ),
     );
@@ -333,14 +415,18 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: _tabIndex == 0 ? AppTheme.primaryTerracotta : const Color(0xFFF3EFEA),
+                color: _tabIndex == 0
+                    ? AppTheme.primaryTerracotta
+                    : const Color(0xFFF3EFEA),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
                 '✨ Create New Cluster',
                 style: TextStyle(
-                  color: _tabIndex == 0 ? Colors.white : const Color(0xFF6B5E57),
+                  color: _tabIndex == 0
+                      ? Colors.white
+                      : const Color(0xFF6B5E57),
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -355,14 +441,18 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: _tabIndex == 1 ? AppTheme.primaryTerracotta : const Color(0xFFF3EFEA),
+                color: _tabIndex == 1
+                    ? AppTheme.primaryTerracotta
+                    : const Color(0xFFF3EFEA),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
                 '🤝 Join Existing Cluster',
                 style: TextStyle(
-                  color: _tabIndex == 1 ? Colors.white : const Color(0xFF6B5E57),
+                  color: _tabIndex == 1
+                      ? Colors.white
+                      : const Color(0xFF6B5E57),
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -428,14 +518,23 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryTerracotta,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: _isSaving
                 ? const SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
                   )
-                : const Text('Create Cluster & Pool Capacity', style: TextStyle(fontWeight: FontWeight.w700)),
+                : const Text(
+                    'Create Cluster & Pool Capacity',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
           ),
         ),
       ],
@@ -472,14 +571,23 @@ class _VirtualClusterDialogState extends State<VirtualClusterDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: _isSaving
                 ? const SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
                   )
-                : const Text('Join Cluster', style: TextStyle(fontWeight: FontWeight.w700)),
+                : const Text(
+                    'Join Cluster',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
           ),
         ),
       ],

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/order_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/buyer_service.dart';
@@ -20,22 +21,50 @@ class _OrdersScreenState extends State<OrdersScreen> {
   String _filterStatus = 'all';
 
   static const List<Map<String, String>> _statusFilters = [
-    {'key': 'all',       'label': 'All'},
-    {'key': 'pending',   'label': '⏳ Pending'},
+    {'key': 'all', 'label': 'All'},
+    {'key': 'pending', 'label': '⏳ Pending'},
     {'key': 'confirmed', 'label': '✅ Confirmed'},
-    {'key': 'shipped',   'label': '🚚 Shipped'},
+    {'key': 'shipped', 'label': '🚚 Shipped'},
     {'key': 'delivered', 'label': '📦 Delivered'},
-    {'key': 'paid',      'label': '💰 Paid'},
+    {'key': 'paid', 'label': '💰 Paid'},
   ];
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AppAuthProvider>().userModel;
-    if (user == null) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
+    final auth = context.watch<AppAuthProvider>();
+    final artisanId = auth.effectiveArtisanId;
+    if (artisanId == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.person_off_outlined,
+                size: 54,
+                color: AppTheme.primaryTerracotta,
+              ),
+              SizedBox(height: 12),
+              Text(
+                'No artisan session',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.darkIndigo,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Sign in or use Demo Artisan Access to view orders.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
+            ],
+          ),
+        ),
+      );
     }
-
-    final artisanId = user.uid;
 
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
@@ -54,7 +83,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   child: ChoiceChip(
                     label: Text(f['label']!),
                     selected: selected,
-                    onSelected: (_) => setState(() => _filterStatus = f['key']!),
+                    onSelected: (_) =>
+                        setState(() => _filterStatus = f['key']!),
                     selectedColor: AppTheme.primaryTerracotta,
                     labelStyle: TextStyle(
                       color: selected ? Colors.white : const Color(0xFF4B5563),
@@ -63,7 +93,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ),
                     backgroundColor: Colors.white,
                     side: BorderSide(
-                      color: selected ? AppTheme.primaryTerracotta : AppTheme.borderGrey,
+                      color: selected
+                          ? AppTheme.primaryTerracotta
+                          : AppTheme.borderGrey,
                     ),
                   ),
                 );
@@ -82,24 +114,30 @@ class _OrdersScreenState extends State<OrdersScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryTerracotta,
+                    ),
+                  );
                 }
 
                 if (snapshot.hasError) {
                   // Fallback: try REST API if Firestore stream fails (e.g. missing index)
-                  return _RestFallbackOrders(artisanId: artisanId, filter: _filterStatus);
+                  return _RestFallbackOrders(
+                    artisanId: artisanId,
+                    filter: _filterStatus,
+                  );
                 }
 
-                var orders = (snapshot.data?.docs ?? [])
-                    .map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      data['id'] = doc.id;
-                      return OrderModel.fromJson(data);
-                    })
-                    .toList();
+                var orders = (snapshot.data?.docs ?? []).map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  data['id'] = doc.id;
+                  return OrderModel.fromJson(data);
+                }).toList();
 
                 if (_filterStatus != 'all') {
-                  orders = orders.where((o) => o.status == _filterStatus).toList();
+                  orders = orders
+                      .where((o) => o.status == _filterStatus)
+                      .toList();
                 }
 
                 if (orders.isEmpty) {
@@ -107,7 +145,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 }
 
                 // Pending orders banner
-                final pendingCount = orders.where((o) => o.status == 'pending').length;
+                final pendingCount = orders
+                    .where((o) => o.status == 'pending')
+                    .length;
 
                 return CustomScrollView(
                   slivers: [
@@ -120,12 +160,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF8E1),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFFFE082)),
+                              border: Border.all(
+                                color: const Color(0xFFFFE082),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.mark_email_unread_rounded,
-                                    color: Color(0xFFF57F17), size: 24),
+                                const Icon(
+                                  Icons.mark_email_unread_rounded,
+                                  color: Color(0xFFF57F17),
+                                  size: 24,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -170,7 +215,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
           const SizedBox(height: 16),
           const Text(
             'No orders yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF6B7280),
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -196,6 +245,7 @@ class _RestFallbackOrders extends StatefulWidget {
 class _RestFallbackOrdersState extends State<_RestFallbackOrders> {
   List<OrderModel> _orders = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -204,20 +254,79 @@ class _RestFallbackOrdersState extends State<_RestFallbackOrders> {
   }
 
   Future<void> _load() async {
-    final orders = await BuyerService.instance.getOrders(artisanId: widget.artisanId);
-    if (mounted) setState(() { _orders = orders; _loading = false; });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+    try {
+      final orders = await BuyerService.instance.getOrders(
+        artisanId: widget.artisanId,
+        throwOnError: true,
+      );
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'Orders could not be loaded. Check the backend and retry.';
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryTerracotta));
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryTerracotta),
+      );
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_rounded,
+                size: 54,
+                color: AppTheme.primaryTerracotta,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     var filtered = widget.filter == 'all'
         ? _orders
         : _orders.where((o) => o.status == widget.filter).toList();
     if (filtered.isEmpty) {
-      return const Center(child: Text('No orders found', style: TextStyle(color: Color(0xFF6B7280))));
+      return const Center(
+        child: Text(
+          'No orders found',
+          style: TextStyle(color: Color(0xFF6B7280)),
+        ),
+      );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -241,13 +350,20 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
 
   Color get _statusColor {
     switch (widget.order.status) {
-      case 'pending':   return const Color(0xFFF59E0B);
-      case 'confirmed': return AppTheme.successGreen;
-      case 'shipped':   return AppTheme.inTransitBlue;
-      case 'delivered': return const Color(0xFF7C3AED);
-      case 'paid':      return AppTheme.successGreen;
-      case 'cancelled': return AppTheme.warningRed;
-      default:          return const Color(0xFF6B7280);
+      case 'pending':
+        return const Color(0xFFF59E0B);
+      case 'confirmed':
+        return AppTheme.successGreen;
+      case 'shipped':
+        return AppTheme.inTransitBlue;
+      case 'delivered':
+        return const Color(0xFF7C3AED);
+      case 'paid':
+        return AppTheme.successGreen;
+      case 'cancelled':
+        return AppTheme.warningRed;
+      default:
+        return const Color(0xFF6B7280);
     }
   }
 
@@ -282,22 +398,35 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _statusColor.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: _statusColor.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Text(
                     order.statusLabel,
                     style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor,
+                    ),
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  order.id.length > 8 ? '#${order.id.substring(0, 8)}' : '#${order.id}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                  order.id.length > 8
+                      ? '#${order.id.substring(0, 8)}'
+                      : '#${order.id}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9CA3AF),
+                  ),
                 ),
               ],
             ),
@@ -305,37 +434,62 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
             Text(
               order.productTitle.isNotEmpty ? order.productTitle : 'Order',
               style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.darkIndigo),
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.darkIndigo,
+              ),
             ),
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.person_outline, size: 14, color: Color(0xFF6B7280)),
+                const Icon(
+                  Icons.person_outline,
+                  size: 14,
+                  color: Color(0xFF6B7280),
+                ),
                 const SizedBox(width: 5),
                 Text(
                   'खरीदार: ${order.buyerName.isNotEmpty ? order.buyerName : "—"}',
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF4B5563),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.inventory_2_rounded, size: 14, color: Color(0xFF6B7280)),
+                const Icon(
+                  Icons.inventory_2_rounded,
+                  size: 14,
+                  color: Color(0xFF6B7280),
+                ),
                 const SizedBox(width: 5),
-                Text('Qty: ${order.quantity}',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+                Text(
+                  'Qty: ${order.quantity}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
                 const SizedBox(width: 16),
                 if (order.deliveryAddress.isNotEmpty) ...[
-                  const Icon(Icons.location_on_rounded,
-                      size: 14, color: AppTheme.primaryTerracotta),
+                  const Icon(
+                    Icons.location_on_rounded,
+                    size: 14,
+                    color: AppTheme.primaryTerracotta,
+                  ),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
                       order.deliveryAddress,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
                   ),
                 ],
@@ -349,8 +503,10 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                 Text(
                   '₹${order.totalPrice.toStringAsFixed(0)}',
                   style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w900,
-                    color: AppTheme.primaryTerracotta),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.primaryTerracotta,
+                  ),
                 ),
                 const Spacer(),
                 // Chat button
@@ -361,7 +517,9 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                     label: const Text('Chat', style: TextStyle(fontSize: 12)),
                     onPressed: order.buyerId.isNotEmpty
                         ? () {
-                            final user = context.read<AppAuthProvider>().userModel;
+                            final user = context
+                                .read<AppAuthProvider>()
+                                .userModel;
                             if (user == null) return;
                             Navigator.push(
                               context,
@@ -371,7 +529,8 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                                   currentUserName: user.name,
                                   otherUserId: order.buyerId,
                                   otherUserName: order.buyerName.isNotEmpty
-                                      ? order.buyerName : 'Buyer',
+                                      ? order.buyerName
+                                      : 'Buyer',
                                   isCurrentUserArtisan: true,
                                 ),
                               ),
@@ -384,7 +543,8 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                       side: const BorderSide(color: AppTheme.inTransitBlue),
                       foregroundColor: AppTheme.inTransitBlue,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
@@ -392,7 +552,9 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
             ),
 
             // Artisan action buttons
-            if (!_updating && order.status != 'delivered' && order.status != 'paid' &&
+            if (!_updating &&
+                order.status != 'delivered' &&
+                order.status != 'paid' &&
                 order.status != 'cancelled') ...[
               const SizedBox(height: 12),
               _actionButtons(order.status),
@@ -400,9 +562,12 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
               const SizedBox(height: 12),
               const Center(
                 child: SizedBox(
-                  height: 20, width: 20,
+                  height: 20,
+                  width: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppTheme.primaryTerracotta),
+                    strokeWidth: 2,
+                    color: AppTheme.primaryTerracotta,
+                  ),
                 ),
               ),
             ],
@@ -414,15 +579,15 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
 
   Widget _actionButtons(String currentStatus) {
     final nextStatus = {
-      'pending':   'confirmed',
+      'pending': 'confirmed',
       'confirmed': 'shipped',
-      'shipped':   'delivered',
+      'shipped': 'delivered',
     }[currentStatus];
 
     final nextLabel = {
-      'pending':   '✅ Confirm Order',
+      'pending': '✅ Confirm Order',
       'confirmed': '🚚 Mark Shipped',
-      'shipped':   '📦 Mark Delivered',
+      'shipped': '📦 Mark Delivered',
     }[currentStatus];
 
     if (nextStatus == null) return const SizedBox.shrink();
@@ -438,7 +603,9 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
           foregroundColor: Colors.white,
           minimumSize: Size.zero,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
     );

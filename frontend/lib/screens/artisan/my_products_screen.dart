@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
@@ -28,16 +29,20 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     super.initState();
     // Load products when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth    = context.read<AppAuthProvider>();
-      final artisanId = auth.firebaseUser?.uid ?? 'artisan_001'; // mock fallback
-      context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
+      final auth = context.read<AppAuthProvider>();
+      final artisanId = auth.effectiveArtisanId;
+      if (artisanId != null) {
+        context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
+      }
     });
   }
 
   Future<void> _refresh() async {
-    final auth     = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? 'artisan_001';
-    await context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
+    final auth = context.read<AppAuthProvider>();
+    final artisanId = auth.effectiveArtisanId;
+    if (artisanId != null) {
+      await context.read<ProductProvider>().fetchProducts(artisanId: artisanId);
+    }
   }
 
   @override
@@ -50,10 +55,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
           );
         }
         if (provider.errorMessage != null) {
-          return _ErrorView(
-            message: provider.errorMessage!,
-            onRetry: _refresh,
-          );
+          return _ErrorView(message: provider.errorMessage!, onRetry: _refresh);
         }
         if (provider.products.isEmpty) {
           return _EmptyView(
@@ -72,17 +74,19 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
           child: ListView.builder(
             padding: const EdgeInsets.only(top: 8, bottom: 100),
             itemCount: provider.products.length,
-            itemBuilder: (context, i) =>
-                _ProductCard(
-                  product: provider.products[i],
-                  onRefresh: _refresh,
-                ),
+            itemBuilder: (context, i) => _ProductCard(
+              product: provider.products[i],
+              onRefresh: _refresh,
+            ),
           ),
         );
       },
     );
 
     final addButton = FloatingActionButton.extended(
+      heroTag: widget.embedded
+          ? 'artisan_catalog_add_embedded'
+          : 'artisan_catalog_add_standalone',
       onPressed: () async {
         final added = await Navigator.push<bool>(
           context,
@@ -93,8 +97,10 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
       backgroundColor: AppTheme.primaryTerracotta,
       foregroundColor: Colors.white,
       icon: const Icon(Icons.add_rounded),
-      label: const Text('Add Product',
-          style: TextStyle(fontWeight: FontWeight.w700)),
+      label: const Text(
+        'Add Product',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
     );
 
     if (widget.embedded) {
@@ -153,78 +159,80 @@ class _ProductCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product image / placeholder
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: product.imageUrl.isNotEmpty
-                  ? Image.network(
-                      product.imageUrl,
-                      width: 88,
-                      height: 88,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) => _imagePlaceholder(),
-                    )
-                  : _imagePlaceholder(),
-            ),
-            const SizedBox(width: 14),
-
-            // Text info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontSize: 15),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  _chip(product.category),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        '₹${product.price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primaryTerracotta,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.inventory_2_outlined,
-                          size: 15,
-                          color: AppTheme.darkIndigo.withValues(alpha: 0.5)),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${product.stockQuantity} in stock',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ],
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Product image / placeholder
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: product.imageUrl.isNotEmpty
+                    ? Image.network(
+                        product.imageUrl,
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => _imagePlaceholder(),
+                      )
+                    : _imagePlaceholder(),
               ),
-            ),
+              const SizedBox(width: 14),
 
-            // Delete button
-            IconButton(
-              icon: Icon(Icons.delete_outline_rounded,
-                  color: Colors.redAccent.withValues(alpha: 0.8)),
-              onPressed: () => _confirmDelete(context),
-              tooltip: 'Delete',
-            ),
-          ],
+              // Text info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.title,
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    _chip(product.category),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          '₹${product.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryTerracotta,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 15,
+                          color: AppTheme.darkIndigo.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${product.stockQuantity} in stock',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Delete button
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.redAccent.withValues(alpha: 0.8),
+                ),
+                onPressed: () => _confirmDelete(context),
+                tooltip: 'Delete',
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _imagePlaceholder() {
     return Container(
@@ -234,8 +242,11 @@ class _ProductCard extends StatelessWidget {
         color: AppTheme.bgParchment,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(Icons.image_outlined,
-          size: 36, color: AppTheme.secondaryOchre),
+      child: const Icon(
+        Icons.image_outlined,
+        size: 36,
+        color: AppTheme.secondaryOchre,
+      ),
     );
   }
 
@@ -278,14 +289,14 @@ class _ProductCard extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      final ok =
-          await context.read<ProductProvider>().deleteProduct(product.id);
+      final ok = await context.read<ProductProvider>().deleteProduct(
+        product.id,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(ok ? 'Product deleted' : 'Could not delete product'),
-            backgroundColor:
-                ok ? AppTheme.successGreen : Colors.redAccent,
+            backgroundColor: ok ? AppTheme.successGreen : Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -307,20 +318,23 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 80,
-                color: AppTheme.secondaryOchre.withValues(alpha: 0.6)),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 80,
+              color: AppTheme.secondaryOchre.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 20),
-            Text('No products yet',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'No products yet',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             Text(
               'Add your first handicraft product and start selling on KalaVistar!',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppTheme.darkIndigo.withValues(alpha: 0.55)),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.darkIndigo.withValues(alpha: 0.55),
+              ),
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
@@ -349,12 +363,17 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 64, color: Colors.redAccent),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: Colors.redAccent,
+            ),
             const SizedBox(height: 16),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             const SizedBox(height: 20),
             OutlinedButton.icon(
               onPressed: onRetry,

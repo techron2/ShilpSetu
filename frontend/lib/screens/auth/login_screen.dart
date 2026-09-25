@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/navigation_provider.dart';
@@ -19,17 +20,17 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailFormKey   = GlobalKey<FormState>();
-  final _phoneFormKey   = GlobalKey<FormState>();
+  final _emailFormKey = GlobalKey<FormState>();
+  final _phoneFormKey = GlobalKey<FormState>();
 
-  final _emailCtrl     = TextEditingController();
-  final _passwordCtrl  = TextEditingController();
-  final _phoneCtrl     = TextEditingController(text: '+91 ');
-  final _otpCtrl       = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController(text: '+91 ');
+  final _otpCtrl = TextEditingController();
 
-  bool _obscurePass    = true;
-  int  _loginTabMode   = 0; // 0: Email, 1: Phone
-  bool _otpSent        = false;
+  bool _obscurePass = true;
+  int _loginTabMode = 0; // 0: Email, 1: Phone
+  bool _otpSent = false;
 
   @override
   void dispose() {
@@ -44,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_emailFormKey.currentState!.validate()) return;
     final auth = context.read<AppAuthProvider>();
     final ok = await auth.signIn(
-      email:    _emailCtrl.text,
+      email: _emailCtrl.text,
       password: _passwordCtrl.text,
     );
     if (!ok && mounted) {
@@ -74,7 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage ?? 'No account found with this phone number.'),
+          content: Text(
+            auth.errorMessage ?? 'No account found with this phone number.',
+          ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 4),
@@ -93,7 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => LanguageSelectionScreen(onSwitchToLogin: widget.onSwitchToSignUp),
+        builder: (_) =>
+            LanguageSelectionScreen(onSwitchToLogin: widget.onSwitchToSignUp),
       ),
     );
   }
@@ -122,8 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppTheme.primaryTerracotta,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(Icons.storefront_rounded,
-                      size: 44, color: Colors.white),
+                  child: const Icon(
+                    Icons.storefront_rounded,
+                    size: 44,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -131,18 +138,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 'KalaVistar',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primaryTerracotta,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: AppTheme.primaryTerracotta,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 lang.getText('login_sub'),
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: AppTheme.darkIndigo.withValues(alpha: 0.65)),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.darkIndigo.withValues(alpha: 0.65),
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -178,27 +184,46 @@ class _LoginScreenState extends State<LoginScreen> {
                               onTap: () => setState(() => _loginTabMode = 0),
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: _loginTabMode == 0 ? Colors.white : Colors.transparent,
+                                  color: _loginTabMode == 0
+                                      ? Colors.white
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: _loginTabMode == 0
-                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                            blurRadius: 4,
+                                          ),
+                                        ]
                                       : null,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.email_outlined,
-                                        size: 16,
-                                        color: _loginTabMode == 0 ? AppTheme.primaryTerracotta : Colors.grey),
+                                    Icon(
+                                      Icons.email_outlined,
+                                      size: 16,
+                                      color: _loginTabMode == 0
+                                          ? AppTheme.primaryTerracotta
+                                          : Colors.grey,
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
                                       lang.getText('email_login'),
                                       style: TextStyle(
                                         fontSize: 13,
-                                        fontWeight: _loginTabMode == 0 ? FontWeight.bold : FontWeight.normal,
-                                        color: _loginTabMode == 0 ? AppTheme.darkIndigo : Colors.grey,
+                                        fontWeight: _loginTabMode == 0
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: _loginTabMode == 0
+                                            ? AppTheme.darkIndigo
+                                            : Colors.grey,
                                       ),
                                     ),
                                   ],
@@ -211,27 +236,46 @@ class _LoginScreenState extends State<LoginScreen> {
                               onTap: () => setState(() => _loginTabMode = 1),
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: _loginTabMode == 1 ? Colors.white : Colors.transparent,
+                                  color: _loginTabMode == 1
+                                      ? Colors.white
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: _loginTabMode == 1
-                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                            blurRadius: 4,
+                                          ),
+                                        ]
                                       : null,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.phone_iphone_rounded,
-                                        size: 16,
-                                        color: _loginTabMode == 1 ? AppTheme.primaryTerracotta : Colors.grey),
+                                    Icon(
+                                      Icons.phone_iphone_rounded,
+                                      size: 16,
+                                      color: _loginTabMode == 1
+                                          ? AppTheme.primaryTerracotta
+                                          : Colors.grey,
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
                                       lang.getText('phone_login'),
                                       style: TextStyle(
                                         fontSize: 13,
-                                        fontWeight: _loginTabMode == 1 ? FontWeight.bold : FontWeight.normal,
-                                        color: _loginTabMode == 1 ? AppTheme.darkIndigo : Colors.grey,
+                                        fontWeight: _loginTabMode == 1
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: _loginTabMode == 1
+                                            ? AppTheme.darkIndigo
+                                            : Colors.grey,
                                       ),
                                     ),
                                   ],
@@ -244,7 +288,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    if (_loginTabMode == 0) _buildEmailForm(auth, lang) else _buildPhoneForm(auth, lang),
+                    if (_loginTabMode == 0)
+                      _buildEmailForm(auth, lang)
+                    else
+                      _buildPhoneForm(auth, lang),
                   ],
                 ),
               ),
@@ -255,17 +302,19 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account? ",
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  Text(
+                    "Don't have an account? ",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   GestureDetector(
                     onTap: _navigateToLanguageAndSignup,
                     child: Text(
                       lang.getText('create_account_btn'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.primaryTerracotta,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
-                          ),
+                        color: AppTheme.primaryTerracotta,
+                        fontWeight: FontWeight.w800,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
                 ],
@@ -290,8 +339,8 @@ class _LoginScreenState extends State<LoginScreen> {
             textInputAction: TextInputAction.next,
             decoration: _inputDec(
               label: lang.getText('email'),
-              hint:  'your@email.com',
-              icon:  Icons.email_outlined,
+              hint: 'your@email.com',
+              icon: Icons.email_outlined,
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
@@ -308,19 +357,22 @@ class _LoginScreenState extends State<LoginScreen> {
             obscureText: _obscurePass,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submitEmailLogin(),
-            decoration: _inputDec(
-              label: lang.getText('password'),
-              hint:  'Your password',
-              icon:  Icons.lock_outline_rounded,
-            ).copyWith(
-              suffixIcon: IconButton(
-                icon: Icon(_obscurePass
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined),
-                onPressed: () =>
-                    setState(() => _obscurePass = !_obscurePass),
-              ),
-            ),
+            decoration:
+                _inputDec(
+                  label: lang.getText('password'),
+                  hint: 'Your password',
+                  icon: Icons.lock_outline_rounded,
+                ).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePass
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePass = !_obscurePass),
+                  ),
+                ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Please enter your password';
               return null;
@@ -334,7 +386,9 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const ForgotPasswordScreen(),
+                  ),
                 );
               },
               child: Text(
@@ -355,21 +409,33 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: AppTheme.primaryTerracotta,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: auth.isLoading
                 ? const SizedBox(
                     height: 22,
-                    width:  22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
                   )
-                : Text(lang.getText('login_btn'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                : Text(
+                    lang.getText('login_btn'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             icon: const Icon(Icons.flash_on_rounded, size: 18),
             label: const Text('✨ Demo Artisan Access (त्वरित प्रवेश)'),
             onPressed: () {
+              context.read<AppAuthProvider>().enterArtisanDemo();
               context.read<NavigationProvider>().setIndex(0);
               Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const MainScreen()),
@@ -399,7 +465,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline_rounded, size: 20, color: Color(0xFF1D4ED8)),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 20,
+                  color: Color(0xFF1D4ED8),
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -418,13 +488,17 @@ class _LoginScreenState extends State<LoginScreen> {
             textInputAction: TextInputAction.done,
             decoration: _inputDec(
               label: lang.getText('phone'),
-              hint:  '+91 98765 43210',
-              icon:  Icons.phone_android_rounded,
+              hint: '+91 98765 43210',
+              icon: Icons.phone_android_rounded,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Please enter your phone number';
+              if (v == null || v.trim().isEmpty) {
+                return 'Please enter your phone number';
+              }
               final clean = v.replaceAll(RegExp(r'\s+'), '');
-              if (clean.length < 10) return 'Valid phone number with country code required';
+              if (clean.length < 10) {
+                return 'Valid phone number with country code required';
+              }
               return null;
             },
           ),
@@ -437,11 +511,13 @@ class _LoginScreenState extends State<LoginScreen> {
               maxLength: 6,
               decoration: _inputDec(
                 label: lang.getText('enter_otp'),
-                hint:  '123456',
-                icon:  Icons.mark_email_read_rounded,
+                hint: '123456',
+                icon: Icons.mark_email_read_rounded,
               ),
               validator: (v) {
-                if (v == null || v.trim().length < 6) return 'Enter 6-digit OTP';
+                if (v == null || v.trim().length < 6) {
+                  return 'Enter 6-digit OTP';
+                }
                 return null;
               },
             ),
@@ -458,7 +534,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       setState(() => _otpSent = true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('OTP sent to phone number. Verify below.'),
+                          content: Text(
+                            'OTP sent to phone number. Verify below.',
+                          ),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -470,17 +548,27 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: AppTheme.primaryTerracotta,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: auth.isLoading
                 ? const SizedBox(
                     height: 22,
-                    width:  22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
                   )
                 : Text(
-                    !_otpSent ? lang.getText('send_otp') : lang.getText('verify_otp'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    !_otpSent
+                        ? lang.getText('send_otp')
+                        : lang.getText('verify_otp'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
           ),
           const SizedBox(height: 12),
@@ -501,7 +589,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return InputDecoration(
       labelText: label,
-      hintText:  hint,
+      hintText: hint,
       prefixIcon: Icon(icon, color: AppTheme.primaryTerracotta),
     );
   }

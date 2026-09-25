@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
@@ -30,7 +31,7 @@ class AddProductScreen extends StatefulWidget {
 }
 
 class _AddProductScreenState extends State<AddProductScreen> {
-  final _formKey        = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleCtrl;
   late final TextEditingController _descCtrl;
   late final TextEditingController _imageUrlCtrl;
@@ -44,11 +45,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
   void initState() {
     super.initState();
     final p = widget.productToEdit;
-    _titleCtrl    = TextEditingController(text: p?.title ?? '');
-    _descCtrl     = TextEditingController(text: p?.description ?? '');
+    _titleCtrl = TextEditingController(text: p?.title ?? '');
+    _descCtrl = TextEditingController(text: p?.description ?? '');
     _imageUrlCtrl = TextEditingController(text: p?.imageUrl ?? '');
-    _priceCtrl    = TextEditingController(text: p != null ? p.price.toStringAsFixed(0) : '');
-    _stockCtrl    = TextEditingController(text: p != null ? p.stockQuantity.toString() : '10');
+    _priceCtrl = TextEditingController(
+      text: p != null ? p.price.toStringAsFixed(0) : '',
+    );
+    _stockCtrl = TextEditingController(
+      text: p != null ? p.stockQuantity.toString() : '10',
+    );
     _selectedCategory = p != null && _kCategories.contains(p.category)
         ? p.category
         : _kCategories.first;
@@ -67,8 +72,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final auth      = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? widget.productToEdit?.artisanId ?? 'artisan_001';
+    final auth = context.read<AppAuthProvider>();
+    final artisanId =
+        auth.effectiveArtisanId ?? widget.productToEdit?.artisanId;
+    if (artisanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in or use Demo Artisan Access first.'),
+        ),
+      );
+      return;
+    }
 
     bool ok;
     if (_isEditing) {
@@ -80,17 +94,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'stock_quantity': int.parse(_stockCtrl.text.trim()),
         'category': _selectedCategory,
       };
-      ok = await context.read<ProductProvider>().updateProduct(widget.productToEdit!.id, updates);
+      ok = await context.read<ProductProvider>().updateProduct(
+        widget.productToEdit!.id,
+        updates,
+      );
     } else {
       final product = Product(
-        id:            '',  // will be assigned by service
-        artisanId:     artisanId,
-        title:         _titleCtrl.text.trim(),
-        description:   _descCtrl.text.trim(),
-        imageUrl:      _imageUrlCtrl.text.trim(),
-        price:         double.parse(_priceCtrl.text.trim()),
+        id: '', // will be assigned by service
+        artisanId: artisanId,
+        title: _titleCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        imageUrl: _imageUrlCtrl.text.trim(),
+        price: double.parse(_priceCtrl.text.trim()),
         stockQuantity: int.parse(_stockCtrl.text.trim()),
-        category:      _selectedCategory,
+        category: _selectedCategory,
       );
       ok = await context.read<ProductProvider>().addProduct(product);
     }
@@ -99,7 +116,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditing ? '✅ उत्पाद सफलतापूर्वक अपडेट हो गया! (Product updated!)' : '✅ Product added successfully!'),
+            content: Text(
+              _isEditing
+                  ? '✅ उत्पाद सफलतापूर्वक अपडेट हो गया! (Product updated!)'
+                  : '✅ Product added successfully!',
+            ),
             backgroundColor: AppTheme.successGreen,
             behavior: SnackBarBehavior.floating,
           ),
@@ -109,7 +130,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         final err = context.read<ProductProvider>().errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(err ?? (_isEditing ? 'Failed to update product' : 'Failed to add product')),
+            content: Text(
+              err ??
+                  (_isEditing
+                      ? 'Failed to update product'
+                      : 'Failed to add product'),
+            ),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -126,7 +152,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       backgroundColor: AppTheme.bgParchment,
       appBar: AppBar(
         leading: const AppBackButton(),
-        title: Text(_isEditing ? '✏️ उत्पाद संपादित करें (Edit Product)' : 'Add New Product'),
+        title: Text(
+          _isEditing
+              ? '✏️ उत्पाद संपादित करें (Edit Product)'
+              : 'Add New Product',
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -139,14 +169,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppTheme.primaryTerracotta, AppTheme.secondaryOchre],
+                    colors: [
+                      AppTheme.primaryTerracotta,
+                      AppTheme.secondaryOchre,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.storefront_rounded,
-                        color: Colors.white, size: 30),
+                    const Icon(
+                      Icons.storefront_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -169,7 +205,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.primaryTerracotta, width: 2),
+                  border: Border.all(
+                    color: AppTheme.primaryTerracotta,
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.primaryTerracotta.withValues(alpha: 0.1),
@@ -182,7 +221,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.auto_awesome, color: AppTheme.primaryTerracotta, size: 28),
+                        Icon(
+                          Icons.auto_awesome,
+                          color: AppTheme.primaryTerracotta,
+                          size: 28,
+                        ),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -207,14 +250,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         backgroundColor: AppTheme.primaryTerracotta,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 46),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: const Icon(Icons.bolt_rounded, size: 20),
-                      label: const Text('AI विज़ार्ड शुरू करें (Start AI Flow)'),
+                      label: const Text(
+                        'AI विज़ार्ड शुरू करें (Start AI Flow)',
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const PhotoCaptureScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const PhotoCaptureScreen(),
+                          ),
                         );
                       },
                     ),
@@ -230,23 +279,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
               _field(
                 controller: _titleCtrl,
                 label: 'Product Title *',
-                hint:  'e.g. Handcrafted Terracotta Kulhad',
-                icon:  Icons.title_rounded,
+                hint: 'e.g. Handcrafted Terracotta Kulhad',
+                icon: Icons.title_rounded,
                 action: TextInputAction.next,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Please enter a title' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter a title'
+                    : null,
               ),
               const SizedBox(height: 14),
 
               _field(
                 controller: _descCtrl,
                 label: 'Description *',
-                hint:  'Describe materials, craft tradition, region…',
-                icon:  Icons.description_outlined,
+                hint: 'Describe materials, craft tradition, region…',
+                icon: Icons.description_outlined,
                 maxLines: 4,
                 action: TextInputAction.next,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Please add a description' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please add a description'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -255,7 +306,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 initialValue: _selectedCategory,
                 decoration: _inputDec(
                   label: 'Category *',
-                  icon:  Icons.category_outlined,
+                  icon: Icons.category_outlined,
                 ),
                 items: _kCategories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -277,8 +328,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     child: _field(
                       controller: _priceCtrl,
                       label: 'Price (₹) *',
-                      hint:  '350',
-                      icon:  Icons.currency_rupee_rounded,
+                      hint: '350',
+                      icon: Icons.currency_rupee_rounded,
                       keyboardType: TextInputType.number,
                       action: TextInputAction.next,
                       validator: (v) {
@@ -294,8 +345,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     child: _field(
                       controller: _stockCtrl,
                       label: 'Stock *',
-                      hint:  '10',
-                      icon:  Icons.inventory_2_outlined,
+                      hint: '10',
+                      icon: Icons.inventory_2_outlined,
                       keyboardType: TextInputType.number,
                       action: TextInputAction.next,
                       validator: (v) {
@@ -317,8 +368,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
               _field(
                 controller: _imageUrlCtrl,
                 label: 'Image URL (optional)',
-                hint:  'https://example.com/my-product.jpg',
-                icon:  Icons.image_outlined,
+                hint: 'https://example.com/my-product.jpg',
+                icon: Icons.image_outlined,
                 keyboardType: TextInputType.url,
                 action: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
@@ -342,8 +393,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         border: Border.all(color: AppTheme.borderGrey),
                       ),
                       child: const Center(
-                        child: Text('Invalid image URL',
-                            style: TextStyle(color: Colors.redAccent)),
+                        child: Text(
+                          'Invalid image URL',
+                          style: TextStyle(color: Colors.redAccent),
+                        ),
                       ),
                     ),
                   ),
@@ -357,9 +410,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 child: provider.isLoading
                     ? const SizedBox(
                         height: 22,
-                        width:  22,
+                        width: 22,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2.5),
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
                       )
                     : const Text('Add Product to Marketplace'),
               ),
@@ -373,9 +428,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Widget _sectionLabel(BuildContext context, String label) {
     return Text(
       label,
-      style: Theme.of(context)
-          .textTheme
-          .titleMedium
+      style: Theme.of(context).textTheme.titleMedium
           ?.copyWith(color: AppTheme.darkIndigo),
     );
   }
@@ -392,14 +445,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
     void Function(String)? onFieldSubmitted,
   }) {
     return TextFormField(
-      controller:         controller,
-      maxLines:           maxLines,
-      keyboardType:       keyboardType,
-      textInputAction:    action,
-      onFieldSubmitted:   onFieldSubmitted,
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      textInputAction: action,
+      onFieldSubmitted: onFieldSubmitted,
       onChanged: (_) => setState(() {}), // re-render image preview
-      decoration:         _inputDec(label: label, hint: hint, icon: icon),
-      validator:          validator,
+      decoration: _inputDec(label: label, hint: hint, icon: icon),
+      validator: validator,
     );
   }
 
@@ -409,8 +462,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     String hint = '',
   }) {
     return InputDecoration(
-      labelText:  label,
-      hintText:   hint,
+      labelText: label,
+      hintText: hint,
       prefixIcon: Icon(icon, color: AppTheme.primaryTerracotta),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -422,9 +475,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppTheme.primaryTerracotta, width: 2),
+        borderSide: const BorderSide(
+          color: AppTheme.primaryTerracotta,
+          width: 2,
+        ),
       ),
-      filled:    true,
+      filled: true,
       fillColor: AppTheme.cardBg,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );

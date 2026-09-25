@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../config/api_config.dart';
 import '../models/order_model.dart';
 import '../models/rfq_model.dart';
@@ -22,13 +24,14 @@ class BuyerService {
     int limit = 50,
   }) async {
     final params = <String, String>{};
-    if (query.isNotEmpty)    params['query']     = query;
-    if (category.isNotEmpty) params['category']  = category;
-    if (minPrice != null)    params['min_price'] = minPrice.toString();
-    if (maxPrice != null)    params['max_price'] = maxPrice.toString();
+    if (query.isNotEmpty) params['query'] = query;
+    if (category.isNotEmpty) params['category'] = category;
+    if (minPrice != null) params['min_price'] = minPrice.toString();
+    if (maxPrice != null) params['max_price'] = maxPrice.toString();
     params['limit'] = limit.toString();
 
-    final uri = Uri.parse(ApiConfig.productSearch).replace(queryParameters: params);
+    final uri = Uri.parse(ApiConfig.productSearch)
+        .replace(queryParameters: params);
     try {
       final resp = await http.get(uri).timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -51,16 +54,18 @@ class BuyerService {
     String region = '',
   }) async {
     try {
-      final resp = await http.post(
-        Uri.parse(ApiConfig.matching),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'category': category,
-          'quantity': quantity,
-          'budget':   budget,
-          'region':   region,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final resp = await http
+          .post(
+            Uri.parse(ApiConfig.matching),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'category': category,
+              'quantity': quantity,
+              'budget': budget,
+              'region': region,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true) {
         return List<Map<String, dynamic>>.from(body['matches'] ?? []);
@@ -79,14 +84,16 @@ class BuyerService {
     required String requirementText,
   }) async {
     try {
-      final resp = await http.post(
-        Uri.parse(ApiConfig.rfq),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'buyer_id':         buyerId,
-          'requirement_text': requirementText,
-        }),
-      ).timeout(const Duration(seconds: 25));
+      final resp = await http
+          .post(
+            Uri.parse(ApiConfig.rfq),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'buyer_id': buyerId,
+              'requirement_text': requirementText,
+            }),
+          )
+          .timeout(const Duration(seconds: 25));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true) {
         return body['rfq'] as Map<String, dynamic>?;
@@ -100,7 +107,8 @@ class BuyerService {
   /// Fetch all RFQs for a buyer.
   Future<List<RfqModel>> getBuyerRfqs(String buyerId) async {
     try {
-      final uri = Uri.parse(ApiConfig.rfq).replace(queryParameters: {'buyer_id': buyerId});
+      final uri = Uri.parse(ApiConfig.rfq)
+          .replace(queryParameters: {'buyer_id': buyerId});
       final resp = await http.get(uri).timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true) {
@@ -131,23 +139,25 @@ class BuyerService {
     String rfqId = '',
   }) async {
     try {
-      final resp = await http.post(
-        Uri.parse(ApiConfig.orders),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'product_id':       productId,
-          'buyer_id':         buyerId,
-          'artisan_id':       artisanId,
-          'quantity':         quantity,
-          'total_price':      totalPrice,
-          'delivery_address': deliveryAddress,
-          'buyer_name':       buyerName,
-          'artisan_name':     artisanName,
-          'product_title':    productTitle,
-          'notes':            notes,
-          'rfq_id':           rfqId,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .post(
+            Uri.parse(ApiConfig.orders),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'product_id': productId,
+              'buyer_id': buyerId,
+              'artisan_id': artisanId,
+              'quantity': quantity,
+              'total_price': totalPrice,
+              'delivery_address': deliveryAddress,
+              'buyer_name': buyerName,
+              'artisan_name': artisanName,
+              'product_title': productTitle,
+              'notes': notes,
+              'rfq_id': rfqId,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true && body['order'] != null) {
         return OrderModel.fromJson(body['order'] as Map<String, dynamic>);
@@ -163,11 +173,12 @@ class BuyerService {
     String buyerId = '',
     String artisanId = '',
     String status = '',
+    bool throwOnError = false,
   }) async {
     final params = <String, String>{};
-    if (buyerId.isNotEmpty)   params['buyer_id']   = buyerId;
+    if (buyerId.isNotEmpty) params['buyer_id'] = buyerId;
     if (artisanId.isNotEmpty) params['artisan_id'] = artisanId;
-    if (status.isNotEmpty)    params['status']     = status;
+    if (status.isNotEmpty) params['status'] = status;
 
     try {
       final uri = Uri.parse(ApiConfig.orders).replace(queryParameters: params);
@@ -178,8 +189,12 @@ class BuyerService {
             .map((o) => OrderModel.fromJson(o as Map<String, dynamic>))
             .toList();
       }
+      if (throwOnError) {
+        throw StateError(body['error']?.toString() ?? 'Could not load orders');
+      }
       return [];
     } catch (_) {
+      if (throwOnError) rethrow;
       return [];
     }
   }
@@ -187,11 +202,13 @@ class BuyerService {
   /// Update an order's status.
   Future<OrderModel?> updateOrderStatus(String orderId, String status) async {
     try {
-      final resp = await http.put(
-        Uri.parse(ApiConfig.orderById(orderId)),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'status': status}),
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .put(
+            Uri.parse(ApiConfig.orderById(orderId)),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'status': status}),
+          )
+          .timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true && body['order'] != null) {
         return OrderModel.fromJson(body['order'] as Map<String, dynamic>);
@@ -208,7 +225,10 @@ class BuyerService {
   Future<Map<String, dynamic>?> getPassport(String productId) async {
     try {
       final resp = await http
-          .get(Uri.parse(ApiConfig.passport(productId)), headers: {'Accept': 'application/json'})
+          .get(
+            Uri.parse(ApiConfig.passport(productId)),
+            headers: {'Accept': 'application/json'},
+          )
           .timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true && body['passport'] != null) {
@@ -230,7 +250,11 @@ class BuyerService {
           .timeout(const Duration(seconds: 10));
       final body = jsonDecode(resp.body) as Map<String, dynamic>;
       if (body['success'] == true && body['data'] != null) {
-        return Map<String, dynamic>.from(body['data'] as Map);
+        final data = Map<String, dynamic>.from(body['data'] as Map);
+        // Preserve response-level provenance so the UI never presents demo
+        // baseline metrics as live Firestore sales.
+        data['_source'] = body['source']?.toString() ?? 'unknown';
+        return data;
       }
       return null;
     } catch (_) {

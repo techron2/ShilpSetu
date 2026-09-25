@@ -123,13 +123,16 @@ def calculate_trust_score(uid: str, db=None) -> dict:
     """
     Computes a weighted trust score:
     - 50% order completion rate: delivered / (delivered + cancelled)
-    - 50% average buyer rating (out of 5.0, default 4.8 for new artisans)
+    - 50% average buyer rating (out of 5.0)
+
+    New artisans return an explicit "building history" state. No rating,
+    completion percentage, or badge is invented before evidence exists.
     Updates the score on the user document in Firestore.
     """
     if db is None:
         db = get_firestore_client()
 
-    completion_rate = 1.0
+    completion_rate = None
     total_orders = 0
     delivered_count = 0
     cancelled_count = 0
@@ -158,16 +161,18 @@ def calculate_trust_score(uid: str, db=None) -> dict:
     finished_orders = delivered_count + cancelled_count
     if finished_orders > 0:
         completion_rate = round(delivered_count / finished_orders, 2)
-    elif total_orders > 0:
-        completion_rate = 0.95
-    else:
-        completion_rate = 1.0
 
-    avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else 4.8
-    # Weighted calculation: Completion rate (scaled to 5.0) * 0.5 + Avg Rating * 0.5
-    trust_score = round((completion_rate * 5.0 * 0.5) + (avg_rating * 0.5), 1)
+    avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
+    has_history = completion_rate is not None and avg_rating is not None
+    trust_score = None
+    if has_history:
+        # Weighted calculation: completion (scaled to 5.0) + buyer rating.
+        trust_score = round(
+            (completion_rate * 5.0 * 0.5) + (avg_rating * 0.5), 1)
 
-    if trust_score >= 4.7:
+    if trust_score is None:
+        badge = "Building history"
+    elif trust_score >= 4.7:
         badge = "🌟 Master Artisan"
     elif trust_score >= 4.3:
         badge = "✅ Verified Artisan"
@@ -181,10 +186,15 @@ def calculate_trust_score(uid: str, db=None) -> dict:
         "trust_score": trust_score,
         "rating": avg_rating,
         "completion_rate": completion_rate,
-        "completion_rate_pct": int(completion_rate * 100),
+        "completion_rate_pct": (
+            int(completion_rate * 100) if completion_rate is not None else None
+        ),
         "total_orders": total_orders,
+        "finished_orders": finished_orders,
+        "rated_orders": len(ratings),
         "delivered_orders": delivered_count,
-        "badge": badge
+        "badge": badge,
+        "has_history": has_history,
     }
 
     # Persist in Firestore
@@ -192,12 +202,14 @@ def calculate_trust_score(uid: str, db=None) -> dict:
         try:
             ref = db.collection('users').document(uid)
             if ref.get().exists:
-                ref.update({
-                    "trust_score": trust_score,
-                    "rating": avg_rating,
-                    "completion_rate": completion_rate,
-                    "trust_badge": badge
-                })
+                updates = {"trust_badge": badge}
+                if trust_score is not None:
+                    updates["trust_score"] = trust_score
+                if avg_rating is not None:
+                    updates["rating"] = avg_rating
+                if completion_rate is not None:
+                    updates["completion_rate"] = completion_rate
+                ref.update(updates)
         except Exception:
             pass
 

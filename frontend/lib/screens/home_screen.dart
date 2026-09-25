@@ -1,301 +1,493 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/product_provider.dart';
+import '../services/buyer_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/artisan_dashboard_metrics.dart';
+import '../utils/inr.dart';
 import 'artisan/my_products_screen.dart';
 import 'artisan/business_assistant_screen.dart';
 import 'analytics/analytics_screen.dart';
 import 'cluster/virtual_cluster_dialog.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _ordersLoading = true;
+  String? _ordersError;
+  ArtisanDashboardMetrics _orderMetrics = const ArtisanDashboardMetrics(
+    pendingOrders: 0,
+    monthEarnings: 0,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrders());
+  }
+
+  Future<void> _loadOrders() async {
+    final artisanId = context.read<AppAuthProvider>().effectiveArtisanId;
+    if (!mounted) return;
+    setState(() {
+      _ordersLoading = true;
+      _ordersError = null;
+    });
+
+    if (artisanId == null) {
+      setState(() {
+        _ordersLoading = false;
+        _ordersError = 'Sign in or use Demo Artisan Access to load live data.';
+      });
+      return;
+    }
+
+    try {
+      final orders = await BuyerService.instance.getOrders(
+        artisanId: artisanId,
+        throwOnError: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _orderMetrics = ArtisanDashboardMetrics.fromOrders(orders);
+        _ordersError = null;
+        _ordersLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _ordersError = 'Live order totals could not be refreshed.';
+        _ordersLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshDashboard() async {
+    final artisanId = context.read<AppAuthProvider>().effectiveArtisanId;
+    final futures = <Future<void>>[_loadOrders()];
+    if (artisanId != null) {
+      futures.add(
+        context.read<ProductProvider>().fetchProducts(artisanId: artisanId),
+      );
+    }
+    await Future.wait(futures);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Greeting Card with Cultural Aesthetic
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.primaryTerracotta, Color(0xFFD05C49)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryTerracotta.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.person_pin, color: Colors.white, size: 34),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Consumer<AppAuthProvider>(
-                        builder: (context, auth, _) {
-                          final name = auth.userModel?.name ?? auth.firebaseUser?.displayName ?? 'Artisan';
-                          final cluster = auth.userModel?.artisanCluster;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'नमस्ते, $name 🙏',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                cluster != null && cluster.isNotEmpty
-                                    ? cluster
-                                    : 'KalaVistar Artisan',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Audio Assistant Pill (Essential for Low Literacy Artisans)
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.white38),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          "व्यापार सहायक से पूछें (AI Assistant)",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    final auth = context.watch<AppAuthProvider>();
+    final catalog = context.watch<ProductProvider>();
+    final catalogValue = catalog.isLoading || catalog.errorMessage != null
+        ? '—'
+        : '${catalog.products.length}';
+    final orderValue = _ordersLoading || _ordersError != null
+        ? '—'
+        : '${_orderMetrics.pendingOrders}';
+    final earningsValue = _ordersLoading || _ordersError != null
+        ? '—'
+        : formatInr(_orderMetrics.monthEarnings);
+    final hasRefreshError =
+        _ordersError != null || catalog.errorMessage != null;
 
-          const SizedBox(height: 24),
-
-          // Dashboard Quick Metrics
-          const Text(
-            "आज का विवरण (Today's Summary)",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.darkIndigo,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricCard(
-                  context,
-                  icon: Icons.inventory_2_rounded,
-                  iconColor: AppTheme.primaryTerracotta,
-                  number: "14",
-                  label: "शिल्प उत्पाद\n(Catalog Items)",
-                  onTap: () => context.read<NavigationProvider>().setIndex(1),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildMetricCard(
-                  context,
-                  icon: Icons.local_shipping_rounded,
-                  iconColor: AppTheme.secondaryOchre,
-                  number: "2",
-                  label: "नए ऑर्डर\n(Orders to Pack)",
-                  onTap: () => context.read<NavigationProvider>().setIndex(2),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildEarningsCard(context),
-
-          const SizedBox(height: 24),
-
-          // Large Accessible Action Buttons
-          const Text(
-            "त्वरित कार्य (Quick Actions)",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.darkIndigo,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Prominent AI Business Assistant Card
-          InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BusinessAssistantScreen()),
-            ),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
+    return RefreshIndicator(
+      onRefresh: _refreshDashboard,
+      color: AppTheme.primaryTerracotta,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Greeting Card with Cultural Aesthetic
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppTheme.darkIndigo, Color(0xFF2C3258)],
+                  colors: [AppTheme.primaryTerracotta, Color(0xFFD05C49)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.darkIndigo.withValues(alpha: 0.25),
+                    color: AppTheme.primaryTerracotta.withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryTerracotta.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.primaryTerracotta.withValues(alpha: 0.4)),
-                    ),
-                    child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 28),
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.white24,
+                        child: Icon(
+                          Icons.person_pin,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Consumer<AppAuthProvider>(
+                          builder: (context, auth, _) {
+                            final name =
+                                auth.userModel?.name ??
+                                auth.firebaseUser?.displayName ??
+                                'Artisan';
+                            final cluster = auth.userModel?.artisanCluster;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'नमस्ते, $name 🙏',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  cluster != null && cluster.isNotEmpty
+                                      ? cluster
+                                      : 'KalaVistar Artisan',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          '💬 AI व्यापार सहायक (Business Guide)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                  const SizedBox(height: 18),
+                  // Audio Assistant Pill (Essential for Low Literacy Artisans)
+                  InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BusinessAssistantScreen(),
+                      ),
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white38),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.support_agent_rounded,
                             color: Colors.white,
+                            size: 20,
                           ),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'कीमत, बिक्री और त्योहारों के ऑफर पर सीधी सलाह लें',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text(
+                            "व्यापार सहायक से पूछें (AI Assistant)",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white12,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
                   ),
                 ],
               ),
             ),
+
+            const SizedBox(height: 24),
+
+            // Dashboard Quick Metrics
+            const Text(
+              "आज का विवरण (Today's Summary)",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.darkIndigo,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            _buildLiveStatus(auth),
+            if (hasRefreshError) ...[
+              const SizedBox(height: 10),
+              _buildRefreshError(catalog.errorMessage ?? _ordersError!),
+            ],
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    context,
+                    icon: Icons.inventory_2_rounded,
+                    iconColor: AppTheme.primaryTerracotta,
+                    number: catalogValue,
+                    label: "शिल्प उत्पाद\n(Catalog Items)",
+                    onTap: () => context.read<NavigationProvider>().setIndex(1),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricCard(
+                    context,
+                    icon: Icons.local_shipping_rounded,
+                    iconColor: AppTheme.secondaryOchre,
+                    number: orderValue,
+                    label: "नए ऑर्डर\n(Pending Orders)",
+                    onTap: () => context.read<NavigationProvider>().setIndex(2),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            _buildEarningsCard(context, earningsValue),
+
+            const SizedBox(height: 24),
+
+            // Large Accessible Action Buttons
+            const Text(
+              "त्वरित कार्य (Quick Actions)",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.darkIndigo,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Prominent AI Business Assistant Card
+            InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BusinessAssistantScreen(),
+                ),
+              ),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.darkIndigo, Color(0xFF2C3258)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.darkIndigo.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryTerracotta.withValues(
+                          alpha: 0.2,
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryTerracotta.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.support_agent_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            '💬 AI व्यापार सहायक (Business Guide)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'कीमत, बिक्री और त्योहारों के ऑफर पर सीधी सलाह लें',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.inventory_2_rounded, size: 24),
+              label: const Text('🏺 मेरे उत्पाद देखें (My Products)'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyProductsScreen()),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.bar_chart_rounded, size: 24),
+              label: const Text('📊 बिज़नेस एनालिटिक्स व चार्ट (Analytics)'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.darkIndigo,
+                foregroundColor: Colors.white,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            OutlinedButton.icon(
+              icon: const Icon(Icons.hub_rounded, size: 24),
+              label: const Text(
+                '🤝 वर्चुअल शिल्प क्लस्टर (Virtual Cluster Hub)',
+              ),
+              onPressed: () => VirtualClusterDialog.show(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF8C6E14),
+                side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            OutlinedButton.icon(
+              icon: const Icon(Icons.add_a_photo_rounded, size: 24),
+              label: const Text('📸 नया शिल्प जोड़ें (Add New Craft)'),
+              onPressed: () => context.read<NavigationProvider>().setIndex(1),
+            ),
+
+            const SizedBox(height: 12),
+
+            OutlinedButton.icon(
+              icon: const Icon(Icons.receipt_long_rounded, size: 24),
+              label: const Text('📦 ऑर्डर और डिलीवरी देखें (View Orders)'),
+              onPressed: () => context.read<NavigationProvider>().setIndex(2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveStatus(AppAuthProvider auth) {
+    final text = auth.isDemoMode
+        ? 'Demo artisan • catalog & orders from live backend'
+        : 'Catalog & orders from live backend';
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: AppTheme.successGreen,
+            shape: BoxShape.circle,
           ),
-
-          const SizedBox(height: 12),
-
-          ElevatedButton.icon(
-            icon: const Icon(Icons.inventory_2_rounded, size: 24),
-            label: const Text('🏺 मेरे उत्पाद देखें (My Products)'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MyProductsScreen()),
+        ),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF667085),
             ),
           ),
+        ),
+        const Icon(Icons.sync_rounded, size: 15, color: Color(0xFF98A2B3)),
+      ],
+    );
+  }
 
-          const SizedBox(height: 12),
-
-          ElevatedButton.icon(
-            icon: const Icon(Icons.bar_chart_rounded, size: 24),
-            label: const Text('📊 बिज़नेस एनालिटिक्स व चार्ट (Analytics)'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+  Widget _buildRefreshError(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFD7B5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 18,
+            color: AppTheme.primaryTerracotta,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF8A3B12)),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.darkIndigo,
-              foregroundColor: Colors.white,
-            ),
           ),
-
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            icon: const Icon(Icons.hub_rounded, size: 24),
-            label: const Text('🤝 वर्चुअल शिल्प क्लस्टर (Virtual Cluster Hub)'),
-            onPressed: () => VirtualClusterDialog.show(context),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF8C6E14),
-              side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            icon: const Icon(Icons.add_a_photo_rounded, size: 24),
-            label: const Text('📸 नया शिल्प जोड़ें (Add New Craft)'),
-            onPressed: () => context.read<NavigationProvider>().setIndex(1),
-          ),
-
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            icon: const Icon(Icons.receipt_long_rounded, size: 24),
-            label: const Text('📦 ऑर्डर और डिलीवरी देखें (View Orders)'),
-            onPressed: () => context.read<NavigationProvider>().setIndex(2),
-          ),
+          TextButton(onPressed: _refreshDashboard, child: const Text('Retry')),
         ],
       ),
     );
@@ -355,7 +547,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEarningsCard(BuildContext context) {
+  Widget _buildEarningsCard(BuildContext context, String earningsValue) {
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -378,25 +570,29 @@ class HomeScreen extends StatelessWidget {
                 color: AppTheme.successGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.currency_rupee, color: Colors.white, size: 24),
+              child: const Icon(
+                Icons.currency_rupee,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    "इस महीने की कुल कमाई (This Month's Earnings) →",
+                children: [
+                  const Text(
+                    "इस महीने की पूरी कमाई (Fulfilled This Month) →",
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF2E7D32),
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    "₹ 12,450",
-                    style: TextStyle(
+                    earningsValue,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF1B5E20),
@@ -405,7 +601,11 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.successGreen, size: 18),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: AppTheme.successGreen,
+              size: 18,
+            ),
           ],
         ),
       ),
