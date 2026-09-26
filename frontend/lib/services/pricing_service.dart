@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'product_categories.dart';
 
 class PricingService {
   final String baseUrl;
@@ -15,9 +16,10 @@ class PricingService {
     String size = 'medium',
     String region = 'Uttar Pradesh',
   }) async {
+    final normalizedCategory = normalizeProductCategory(category);
     if (ApiConfig.useMock) {
       await Future.delayed(const Duration(milliseconds: 600));
-      return _mockPriceSuggestion(category, size);
+      return _mockPriceSuggestion(normalizedCategory, size);
     }
 
     try {
@@ -26,7 +28,7 @@ class PricingService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'category': category,
+          'category': normalizedCategory,
           'material_cost': materialCost,
           'size': size,
           'region': region,
@@ -37,11 +39,11 @@ class PricingService {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       } else {
         debugPrint('Pricing API returned status ${resp.statusCode}: ${resp.body}');
-        return _mockPriceSuggestion(category, size, materialCost: materialCost, region: region);
+        return _mockPriceSuggestion(normalizedCategory, size, materialCost: materialCost, region: region);
       }
     } catch (e) {
       debugPrint('Error calling /api/pricing/suggest: $e');
-      return _mockPriceSuggestion(category, size, materialCost: materialCost, region: region);
+      return _mockPriceSuggestion(normalizedCategory, size, materialCost: materialCost, region: region);
     }
   }
 
@@ -58,7 +60,8 @@ class PricingService {
       'Metal Craft': 1250,
       'Wood Craft': 750,
       'Jewellery': 450,
-      'Accessories': 300,
+      'Embroidery': 780,
+      'Leather': 980,
       'Other': 400,
     };
     final mult = size == 'small' ? 0.9 : (size == 'large' ? 1.8 : 1.3);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
+import '../../services/product_categories.dart';
 import '../../theme/app_theme.dart';
 import 'buyer_product_detail_screen.dart';
 
@@ -16,8 +17,8 @@ class BuyerHomeScreen extends StatefulWidget {
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _categories = [
-    'All', 'Textiles', 'Pottery', 'Jewelry', 'Embroidery',
-    'Woodwork', 'Leather', 'Painting', 'Metalwork',
+    'All',
+    ...canonicalProductCategories,
   ];
   String _selectedCategory = 'All';
   List<Map<String, dynamic>> _products = [];

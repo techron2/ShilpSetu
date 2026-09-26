@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from services.firebase_service import get_firestore_client
+from services.categories import normalize_category
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,9 @@ def _serialize_doc(doc):
     for k, v in list(data.items()):
         if hasattr(v, 'isoformat'):
             data[k] = v.isoformat()
+    # Present canonical spelling without mutating Firestore.
+    if 'category' in data:
+        data['category'] = normalize_category(data.get('category'), default='Other')
     return data
 
 
@@ -52,7 +56,7 @@ def create_product():
             "image_url":      data.get("image_url", ""),
             "price":          float(data.get("price", 0)),
             "stock_quantity": int(data.get("stock_quantity", 0)),
-            "category":       data.get("category", "Uncategorized"),
+            "category":       normalize_category(data.get("category"), default="Other"),
             "created_at":     now_iso,
         }
         doc_ref.set(product)
@@ -123,12 +127,21 @@ def search_products():
     try:
         ref = db.collection('products')
 
-        # Firestore-level filter on category (uses index, fast)
-        if category:
-            ref = ref.where('category', '==', category)
+        # Alias-aware read compatibility (no migration):
+        # legacy docs (Jewelry/Woodwork/Metalwork/Accessories/...) must still
+        # match canonical buyer filters, so we fetch candidates and filter in
+        # Python via normalize_category instead of an exact Firestore where.
+        requested_category = normalize_category(category, default='') if category else ''
 
         docs = list(ref.stream())
         results = [_serialize_doc(d) for d in docs]
+
+        # ── Category post-filtering (alias-aware) ──────────────────────────
+        if requested_category:
+            results = [
+                p for p in results
+                if normalize_category(p.get('category'), default='Other') == requested_category
+            ]
 
         # ── Python-side post-filtering ────────────────────────────────────
         if query_text:
@@ -166,7 +179,7 @@ def search_products():
             "source": "firestore",
             "count": len(results),
             "query": query_text,
-            "category": category,
+            "category": requested_category if category else category,
             "products": results,
         }), 200
 
@@ -290,6 +303,9 @@ def update_product(product_id):
 
     allowed_fields = ['title', 'description', 'image_url', 'price', 'stock_quantity', 'category']
     updates = {k: v for k, v in data.items() if k in allowed_fields}
+
+    if 'category' in updates:
+        updates['category'] = normalize_category(updates.get('category'), default='Other')
 
     if not updates:
         return jsonify({"success": False, "error": "No valid fields to update"}), 400

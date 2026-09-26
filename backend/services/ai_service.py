@@ -2,6 +2,7 @@ import os
 import re
 import json
 import logging
+from services.categories import normalize_category
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +142,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         2. "title_hi": Clear, attractive product title in Hindi (3 to 8 words).
         3. "description_en": Compelling product description in English (2-3 sentences) highlighting craft tradition, material, and usefulness.
         4. "description_hi": Compelling product description in Hindi (2-3 sentences) highlighting craft tradition, material, and usefulness.
-        5. "category": EXACTLY one of: "Pottery", "Textiles", "Painting", "Metal Craft", "Accessories", "Jewellery", "Wood Craft", "Other".
+        5. "category": EXACTLY one of: "Textiles", "Pottery", "Jewellery", "Embroidery", "Wood Craft", "Leather", "Painting", "Metal Craft", "Other".
         6. "key_features": An array of 3 to 4 short bullet highlights (e.g. material, handmade quality, heritage).
 
         Output ONLY valid JSON matching this schema:
@@ -189,7 +190,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         title_hi = parsed.get("title_hi") or title_en
         desc_en = parsed.get("description_en") or parsed.get("description", "")
         desc_hi = parsed.get("description_hi") or desc_en
-        category = parsed.get("category", "Other")
+        category = normalize_category(parsed.get("category", "Other"), default="Other")
         features = parsed.get("key_features", [])
 
         logger.info(f"Gemini structured extraction success: {title_en} [{category}]")
@@ -230,7 +231,7 @@ def process_voice_to_catalog(transcript: str, lang_code: str = "hi") -> dict:
     title_hi = extracted.get("title_hi", "")
     desc_en = extracted.get("description_en", "")
     desc_hi = extracted.get("description_hi", "")
-    category = extracted.get("category", "Other")
+    category = normalize_category(extracted.get("category", "Other"), default="Other")
     features = extracted.get("key_features", [])
 
     # Step 2: Safety check - if any language field is unexpectedly empty, fill with safe translation

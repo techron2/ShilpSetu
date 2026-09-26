@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/order_model.dart';
 import '../models/rfq_model.dart';
+import 'product_categories.dart';
 
 /// Service layer for all buyer-facing API calls.
 /// Talks to the Phase 4 Flask endpoints.
@@ -23,7 +24,9 @@ class BuyerService {
   }) async {
     final params = <String, String>{};
     if (query.isNotEmpty)    params['query']     = query;
-    if (category.isNotEmpty) params['category']  = category;
+    if (category.isNotEmpty) {
+      params['category'] = normalizeProductCategory(category, fallback: '');
+    }
     if (minPrice != null)    params['min_price'] = minPrice.toString();
     if (maxPrice != null)    params['max_price'] = maxPrice.toString();
     params['limit'] = limit.toString();
@@ -55,7 +58,7 @@ class BuyerService {
         Uri.parse(ApiConfig.matching),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'category': category,
+          'category': normalizeProductCategory(category, fallback: ''),
           'quantity': quantity,
           'budget':   budget,
           'region':   region,

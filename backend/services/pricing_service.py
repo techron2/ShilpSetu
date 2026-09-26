@@ -2,6 +2,7 @@ import os
 import logging
 import joblib
 import pandas as pd
+from services.categories import CANONICAL_CATEGORIES, normalize_category
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ def _generate_explanation(category: str, material_cost: float, size: str, region
         "Metal Craft": "धातु शिल्प (Metal Craft)",
         "Wood Craft": "काष्ठ शिल्प (Wood Craft)",
         "Jewellery": "हस्तनिर्मित आभूषण (Jewellery)",
+        "Embroidery": "कढ़ाई शिल्प (Embroidery)",
+        "Leather": "चर्म शिल्प (Leather)",
         "Accessories": "सहायक वस्तुएं (Accessories)",
         "Other": "हस्तशिल्प उत्पाद"
     }
@@ -57,7 +60,8 @@ def suggest_product_price(
     region: str = "Uttar Pradesh"
 ) -> dict:
     """Predicts fair-trade e-commerce product price and returns price range + explanation."""
-    valid_categories = ["Pottery", "Textiles", "Painting", "Metal Craft", "Wood Craft", "Jewellery", "Accessories", "Other"]
+    category = normalize_category(category, default="Other")
+    valid_categories = list(CANONICAL_CATEGORIES)
     if category not in valid_categories:
         category = "Other"
 
@@ -76,6 +80,8 @@ def suggest_product_price(
             "Metal Craft": 450.0,
             "Wood Craft": 250.0,
             "Jewellery": 160.0,
+            "Embroidery": 200.0,
+            "Leather": 300.0,
             "Accessories": 120.0,
             "Other": 150.0
         }
@@ -107,6 +113,8 @@ def suggest_product_price(
             "Metal Craft": 3.0,
             "Wood Craft": 3.0,
             "Textiles": 2.8,
+            "Embroidery": 3.2,
+            "Leather": 3.0,
             "Accessories": 2.5,
             "Other": 2.8
         }

@@ -22,6 +22,7 @@ Upgrade path:
 import logging
 from flask import Blueprint, jsonify, request
 from services.firebase_service import get_firestore_client
+from services.categories import normalize_category
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def _build_feature_string(product: dict, artisan_profile: dict | None) -> str:
     parts = [
         product.get('title', ''),
         product.get('description', ''),
-        product.get('category', ''),
+        normalize_category(product.get('category', ''), default=''),
         product.get('region', ''),
         product.get('artisan_cluster', ''),
     ]
@@ -60,7 +61,7 @@ def match_buyer_supplier():
         ranked list of up to 5 best-matching artisans with their top product.
     """
     data = request.get_json(silent=True) or {}
-    category = data.get('category', '')
+    category = normalize_category(data.get('category', ''), default='') if data.get('category', '') else ''
     quantity = data.get('quantity', 1)
     budget   = data.get('budget', 0)
     region   = data.get('region', '')

@@ -4,19 +4,11 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../services/pricing_service.dart';
+import '../../services/product_categories.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 
-const List<String> _kCategories = [
-  'Pottery',
-  'Textiles',
-  'Painting',
-  'Metal Craft',
-  'Accessories',
-  'Jewellery',
-  'Wood Craft',
-  'Other',
-];
+const List<String> _kCategories = canonicalProductCategories;
 
 /// Step 3 of the AI Catalog Flow:
 /// Review and edit the AI-generated bilingual (EN & HI) product listing.
@@ -94,8 +86,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     _priceCtrl   = TextEditingController(text: '');
     _stockCtrl   = TextEditingController(text: '10');
 
-    _selectedCategory = _kCategories.contains(widget.initialCategory)
-        ? widget.initialCategory
+    _selectedCategory = _kCategories.contains(normalizeProductCategory(widget.initialCategory, fallback: ''))
+        ? normalizeProductCategory(widget.initialCategory, fallback: '')
         : 'Pottery';
     _features = List<String>.from(widget.keyFeatures);
 
@@ -106,7 +98,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       'Metal Craft': '450',
       'Wood Craft': '250',
       'Jewellery': '160',
-      'Accessories': '120',
+      'Embroidery': '200',
+      'Leather': '300',
       'Other': '150',
     };
     _materialCostCtrl = TextEditingController(
@@ -420,7 +413,8 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         'Metal Craft': '450',
                         'Wood Craft': '250',
                         'Jewellery': '160',
-                        'Accessories': '120',
+                        'Embroidery': '200',
+                        'Leather': '300',
                         'Other': '150',
                       };
                       if (_materialCostCtrl.text.isEmpty ||

@@ -6,20 +6,12 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../services/ai_catalog_service.dart';
+import '../../services/product_categories.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 import 'photo_capture_screen.dart';
 
-const List<String> _kCategories = [
-  'Pottery',
-  'Textiles',
-  'Painting',
-  'Metal Craft',
-  'Accessories',
-  'Jewellery',
-  'Wood Craft',
-  'Other',
-];
+const List<String> _kCategories = canonicalProductCategories;
 
 /// Form screen to add or edit a product listing with native image picker
 /// and studio AI enhancement pipeline.
@@ -65,8 +57,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _descCtrl = TextEditingController(text: p?.description ?? '');
     _priceCtrl = TextEditingController(text: p != null ? p.price.toStringAsFixed(0) : '');
     _stockCtrl = TextEditingController(text: p != null ? p.stockQuantity.toString() : '10');
-    _selectedCategory = p != null && _kCategories.contains(p.category)
-        ? p.category
+    final normalizedCategory =
+        p != null ? normalizeProductCategory(p.category, fallback: '') : '';
+    _selectedCategory = normalizedCategory.isNotEmpty && _kCategories.contains(normalizedCategory)
+        ? normalizedCategory
         : _kCategories.first;
 
     if (p != null && p.imageUrl.isNotEmpty) {

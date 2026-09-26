@@ -25,15 +25,40 @@ import re
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from services.firebase_service import get_firestore_client
+from services.categories import CANONICAL_CATEGORIES, normalize_category
 
 logger = logging.getLogger(__name__)
 
 rfq_bp = Blueprint('rfq', __name__)
 
-_CRAFT_CATEGORIES = [
-    "Textiles", "Pottery", "Jewelry", "Woodwork", "Leather",
-    "Painting", "Embroidery", "Metalwork", "Stonework", "Basketry", "Other"
-]
+_CRAFT_CATEGORIES = list(CANONICAL_CATEGORIES)
+
+# Legacy/common wording recognized by the offline fallback parser.
+# Keys are lower-cased phrases to search for; values are canonical categories.
+_FALLBACK_CATEGORY_KEYWORDS = {
+    "textiles": "Textiles",
+    "saree": "Textiles",
+    "pottery": "Pottery",
+    "kulhad": "Pottery",
+    "jewellery": "Jewellery",
+    "jewelry": "Jewellery",
+    "embroidery": "Embroidery",
+    "wood craft": "Wood Craft",
+    "woodcraft": "Wood Craft",
+    "woodwork": "Wood Craft",
+    "wood work": "Wood Craft",
+    "leather": "Leather",
+    "painting": "Painting",
+    "madhubani": "Painting",
+    "metal craft": "Metal Craft",
+    "metalcraft": "Metal Craft",
+    "metalwork": "Metal Craft",
+    "metal work": "Metal Craft",
+    "stonework": "Other",
+    "basketry": "Other",
+    "accessories": "Other",
+    "accessory": "Other",
+}
 
 
 def _gemini_parse_rfq(requirement_text: str) -> dict:
@@ -97,12 +122,18 @@ def _fallback_parse_rfq(requirement_text: str) -> dict:
     total_budget = float(budget_match.group(1).replace(',', '')) if budget_match else 0
     target_price = round(total_budget / quantity, 2) if total_budget and quantity else 0.0
 
-    # Detect category
+    # Detect category (canonical + legacy wording, then normalize)
     category = "Other"
-    for cat in _CRAFT_CATEGORIES:
-        if cat.lower() in text:
-            category = cat
+    for keyword, canonical in _FALLBACK_CATEGORY_KEYWORDS.items():
+        if keyword in text:
+            category = canonical
             break
+    else:
+        for cat in _CRAFT_CATEGORIES:
+            if cat.lower() in text:
+                category = cat
+                break
+    category = normalize_category(category, default="Other")
 
     from datetime import timedelta
     deadline = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
@@ -148,6 +179,10 @@ def create_rfq():
         logger.warning(f"Gemini RFQ parsing failed ({e}), using fallback")
         ai_used = False
         structured = _fallback_parse_rfq(requirement_text)
+
+    # Defensively normalize Gemini/category output to canonical vocabulary.
+    if isinstance(structured, dict) and structured.get("category"):
+        structured["category"] = normalize_category(structured.get("category"), default="Other")
 
     # ── Save to Firestore ─────────────────────────────────────────────────────
     db = get_firestore_client()
