@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/buyer_metadata.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 import 'buyer_product_detail_screen.dart';
 
@@ -161,7 +163,7 @@ class _RequirementBanner extends StatelessWidget {
             children: [
               if (category.isNotEmpty) _chip('🏷️ $category'),
               if (quantity.isNotEmpty) _chip('📦 $quantity units'),
-              if (budget > 0) _chip('💰 ₹${budget.toStringAsFixed(0)} budget'),
+              if (budget > 0) _chip('💰 ${formatInr(budget)} budget'),
               if (region.isNotEmpty) _chip('📍 $region'),
             ],
           ),
@@ -204,7 +206,7 @@ class _SupplierCard extends StatelessWidget {
     final stock     = (product['stock_quantity'] as num?)?.toInt() ?? 0;
     final name      = artisan['name']?.toString() ?? 'Artisan';
     final region    = artisan['region']?.toString() ?? '';
-    final rating    = (artisan['rating'] as num?)?.toDouble() ?? 4.0;
+    final rating    = parseProductRating({...product, 'rating': artisan['rating']});
 
     return Container(
       margin: highlighted ? const EdgeInsets.only(bottom: 4) : EdgeInsets.zero,
@@ -306,7 +308,7 @@ class _SupplierCard extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 // Price
-                _infoRow(Icons.currency_rupee_rounded, '₹${price.toStringAsFixed(0)}/unit',
+                _infoRow(Icons.currency_rupee_rounded, '${formatInr(price)}/unit',
                     AppTheme.primaryTerracotta),
 
                 // Region
@@ -317,18 +319,24 @@ class _SupplierCard extends StatelessWidget {
                 _infoRow(Icons.inventory_2_rounded, '$stock in stock',
                     stock > 50 ? AppTheme.successGreen : AppTheme.warningRed),
 
-                // Rating
-                Row(
-                  children: [
-                    ...List.generate(5, (i) => Icon(
-                      i < rating.round() ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: AppTheme.secondaryOchre, size: 14,
-                    )),
-                    const SizedBox(width: 4),
-                    Text(rating.toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                  ],
-                ),
+                // Rating (real only)
+                if (rating != null)
+                  Row(
+                    children: [
+                      ...List.generate(5, (i) => Icon(
+                        i < rating.round() ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: AppTheme.secondaryOchre, size: 14,
+                      )),
+                      const SizedBox(width: 4),
+                      Text(rating.toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                    ],
+                  )
+                else
+                  const Text(
+                    '☆ No ratings yet',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                  ),
 
                 const SizedBox(height: 4),
 
@@ -413,7 +421,7 @@ class _ComparisonTable extends StatelessWidget {
       ['Price/unit', ...matches.map((m) {
         final p = m['product'] as Map? ?? {};
         final price = (p['price'] as num?)?.toDouble() ?? 0;
-        return '₹${price.toStringAsFixed(0)}';
+        return formatInr(price);
       })],
       ['In Stock', ...matches.map((m) {
         final p = m['product'] as Map? ?? {};
@@ -425,8 +433,8 @@ class _ComparisonTable extends StatelessWidget {
       })],
       ['Rating', ...matches.map((m) {
         final a = m['artisan'] as Map? ?? {};
-        final r = (a['rating'] as num?)?.toDouble() ?? 4.0;
-        return '⭐ ${r.toStringAsFixed(1)}';
+        final r = parseProductRating(Map<String, dynamic>.from(a));
+        return r != null ? '⭐ ${r.toStringAsFixed(1)}' : '—';
       })],
       ['AI Match', ...matches.map((m) {
         final s = (m['similarity_score'] as num?)?.toDouble() ?? 0;

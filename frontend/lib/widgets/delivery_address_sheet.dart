@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/buyer_service.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/inr.dart';
 
 /// Modal bottom sheet for collecting delivery address before placing an order.
 class DeliveryAddressSheet extends StatefulWidget {
@@ -232,7 +233,7 @@ class _DeliveryAddressSheetState extends State<DeliveryAddressSheet> {
                     ),
                   ),
                   Text(
-                    '₹${widget.totalPrice.toStringAsFixed(0)}',
+                    formatInr(widget.totalPrice),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,

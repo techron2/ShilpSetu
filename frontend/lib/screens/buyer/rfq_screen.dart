@@ -4,6 +4,7 @@ import '../../models/rfq_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 import 'supplier_comparison_screen.dart';
 
@@ -416,10 +417,10 @@ class _RfqCard extends StatelessWidget {
               '${rfq.quantity} units'),
           _divider(),
           _row(Icons.currency_rupee_rounded, 'Target Price/Unit',
-              '₹${rfq.targetPrice.toStringAsFixed(0)}'),
+              formatInr(rfq.targetPrice)),
           _divider(),
           _row(Icons.account_balance_wallet_rounded, 'Est. Total Budget',
-              '₹${rfq.estimatedBudget.toStringAsFixed(0)}'),
+              formatInr(rfq.estimatedBudget)),
           _divider(),
           _row(Icons.calendar_today_rounded, 'Deadline', rfq.deadline),
           _divider(),

@@ -4,6 +4,8 @@ import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../services/product_categories.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/buyer_metadata.dart';
+import '../../utils/inr.dart';
 import 'buyer_product_detail_screen.dart';
 
 /// Buyer home screen with product search, category chips, and product grid.
@@ -353,7 +355,10 @@ class _ProductCard extends StatelessWidget {
     final title    = product['title']?.toString() ?? 'Product';
     final price    = (product['price'] as num?)?.toDouble() ?? 0;
     final category = product['category']?.toString() ?? '';
-    final rating   = (product['rating'] as num?)?.toDouble() ?? 4.0;
+    final rating   = parseProductRating(product);
+    final reviews  = parseReviewCount(product);
+    final showVerified = shouldShowVerifiedBadge(product);
+    final showCluster = shouldShowClusterBadge(product);
     final imageUrl = product['image_url']?.toString() ?? '';
 
     return GestureDetector(
@@ -439,67 +444,80 @@ class _ProductCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // Rating row — minimum 12px
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            color: Color(0xFFD4AF37), size: 14),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,            // was 11
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF4B5563),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            '🛡️ Verified',
-                            style: TextStyle(
-                              fontSize: 10,
+                    // Rating row — only real ratings; missing looks missing.
+                    if (rating != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              color: Color(0xFFD4AF37), size: 14),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${rating.toStringAsFixed(1)}${reviews != null ? ' ($reviews)' : ''}',
+                            style: const TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.successGreen,
+                              color: Color(0xFF4B5563),
                             ),
                           ),
+                          if (showVerified) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                '🛡️ Verified',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.successGreen,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    else
+                      const Text(
+                        '☆ No ratings yet',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF9CA3AF),
                         ),
-                      ],
-                    ),
+                      ),
                     const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '₹${price.toStringAsFixed(0)}',
+                          formatInr(price),
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
                             color: AppTheme.primaryTerracotta,
                           ),
                         ),
-                        // Cluster badge — raised to 11px
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F1DC),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
-                          ),
-                          child: const Text(
-                            '🌿 Cluster',
-                            style: TextStyle(
-                              fontSize: 11,           // was 8 — fixed
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF8C6E14),
+                        // Cluster badge only with real membership metadata.
+                        if (showCluster)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F1DC),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                            ),
+                            child: const Text(
+                              '🌿 Cluster',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF8C6E14),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ],

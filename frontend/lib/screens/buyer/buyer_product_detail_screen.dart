@@ -7,6 +7,8 @@ import '../../models/order_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/buyer_metadata.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/delivery_address_sheet.dart';
 import '../../widgets/payment_method_sheet.dart';
@@ -44,12 +46,12 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
   double get price    => (p['price'] as num?)?.toDouble() ?? 0;
   int    get stock    => (p['stock_quantity'] as num?)?.toInt() ?? 0;
   String get category => p['category']?.toString() ?? '';
-  double get rating   => (p['rating'] as num?)?.toDouble() ?? 4.0;
-  int    get reviews  => (p['review_count'] as num?)?.toInt() ?? 0;
+  double? get rating => parseProductRating(p);
+  int? get reviews => parseReviewCount(p);
   String get region   => p['region']?.toString() ?? '';
   String get imageUrl => p['image_url']?.toString() ?? '';
-  String get artisanId => p['artisan_id']?.toString() ?? '';
-  String get productId => p['id']?.toString() ?? '';
+  String get artisanId => p['artisan_id']?.toString().trim() ?? '';
+  String get productId => p['id']?.toString().trim() ?? '';
 
   @override
   void initState() {
@@ -58,10 +60,12 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
   }
 
   Future<void> _fetchExtraBadges() async {
-    final aid = artisanId.isNotEmpty ? artisanId : 'test_artisan_phase4';
+    // Only fetch for real artisan IDs. Missing IDs stay unavailable —
+    // never substitute an unrelated demo record.
+    if (artisanId.isEmpty) return;
     final results = await Future.wait([
-      BuyerService.instance.getTrustScore(aid),
-      BuyerService.instance.getClusterByArtisan(aid),
+      BuyerService.instance.getTrustScore(artisanId),
+      BuyerService.instance.getClusterByArtisan(artisanId),
     ]);
 
     if (!mounted) return;
@@ -73,17 +77,20 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
   Future<void> _shareToWhatsApp() async {
     setState(() => _isGeneratingPromo = true);
-    final promo = await BuyerService.instance.generatePromoCaption(
-      productId: productId.isNotEmpty ? productId : 'test_passport_prod_01',
-      language: 'hi',
-    );
+    Map<String, dynamic>? promo;
+    if (productId.isNotEmpty) {
+      promo = await BuyerService.instance.generatePromoCaption(
+        productId: productId,
+        language: 'hi',
+      );
+    }
     if (!mounted) return;
     setState(() => _isGeneratingPromo = false);
 
+    // Local fallback describes only the current product, no fake passport link.
     final caption = promo?['caption'] ??
         '🌿 Check out this authentic handcrafted $title on HunarSathi!\n\n'
-        'Price: ₹${price.toStringAsFixed(0)}\n'
-        'View Digital Craft Passport: ${ApiConfig.passportPublicView(productId.isNotEmpty ? productId : 'sample')}\n\n'
+        'Price: ${formatInr(price)}\n'
         '#HunarSathi #VocalForLocal #HandmadeInIndia';
 
     if (!mounted) return;
@@ -159,7 +166,15 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
   }
 
   void _showPassportPreviewDialog() {
-    final passportUrl = ApiConfig.passportPublicView(productId.isNotEmpty ? productId : 'test_passport_prod_01');
+    if (productId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Digital Craft Passport is unavailable for this item.'),
+        ),
+      );
+      return;
+    }
+    final passportUrl = ApiConfig.passportPublicView(productId);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -288,7 +303,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
             Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text('Quantity: $_quantity unit${_quantity > 1 ? 's' : ''}'),
-            Text('Total: ₹${(price * _quantity).toStringAsFixed(0)}'),
+            Text('Total: ${formatInr(price * _quantity)}'),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -341,7 +356,19 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final passportUrl = ApiConfig.passportPublicView(productId.isNotEmpty ? productId : 'sample');
+    final passportUrl = productId.isNotEmpty ? ApiConfig.passportPublicView(productId) : '';
+    final trustBadge = trustBadgeText(_trustScore);
+    final trustValue = trustScoreValue(_trustScore);
+    final trustPct = trustFulfillmentPct(_trustScore);
+    final trustParts = <String>[];
+    if (trustBadge != null) trustParts.add(trustBadge);
+    if (trustValue != null) trustParts.add('${trustValue.toStringAsFixed(1)}★');
+    if (trustPct != null) trustParts.add('($trustPct% Fulfillment)');
+    final trustText = trustParts.join(' • ');
+    final ratingValue = rating;
+    final reviewCount = reviews;
+    final clusterName = _cluster?['name']?.toString().trim() ?? '';
+    final clusterCapacity = _cluster?['combined_capacity'];
 
     return Scaffold(
       backgroundColor: AppTheme.bgParchment,
@@ -404,21 +431,29 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Rating + Region row
+                  // Rating + Region row (real rating only)
                   Row(
                     children: [
-                      ...List.generate(5, (i) => Icon(
-                        i < rating.round()
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: AppTheme.secondaryOchre,
-                        size: 18,
-                      )),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${rating.toStringAsFixed(1)} ($reviews reviews)',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-                      ),
+                      if (ratingValue != null) ...[
+                        ...List.generate(5, (i) => Icon(
+                          i < ratingValue.round()
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: AppTheme.secondaryOchre,
+                          size: 18,
+                        )),
+                        const SizedBox(width: 6),
+                        Text(
+                          reviewCount != null
+                              ? '${ratingValue.toStringAsFixed(1)} ($reviewCount reviews)'
+                              : ratingValue.toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                        ),
+                      ] else
+                        const Text(
+                          '☆ No ratings yet',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                        ),
                       const Spacer(),
                       if (region.isNotEmpty)
                         Row(
@@ -439,8 +474,8 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                     ],
                   ),
 
-                  // Artisan Trust Score Badge
-                  if (_trustScore != null) ...[
+                  // Artisan Trust Score Badge (real API fields only)
+                  if (_trustScore != null && (trustBadge != null || trustValue != null || trustPct != null)) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -452,11 +487,19 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.verified_rounded, color: AppTheme.successGreen, size: 16),
+                          Icon(
+                            isPositiveTrustBadge(trustBadge)
+                                ? Icons.verified_rounded
+                                : Icons.info_outline_rounded,
+                            color: isPositiveTrustBadge(trustBadge)
+                                ? AppTheme.successGreen
+                                : const Color(0xFF9CA3AF),
+                            size: 16,
+                          ),
                           const SizedBox(width: 5),
                           Flexible(
                             child: Text(
-                              '${_trustScore!['badge'] ?? 'Master Artisan'} • ${_trustScore!['trust_score'] ?? 4.8}★ (${_trustScore!['completion_rate_pct'] ?? 100}% Fulfillment)',
+                              trustText,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -469,8 +512,8 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                     ),
                   ],
 
-                  // Virtual Cluster Badge
-                  if (_cluster != null) ...[
+                  // Virtual Cluster Badge (real membership only)
+                  if (_cluster != null && clusterName.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -488,17 +531,18 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '🌿 Virtual Cluster Member: ${_cluster!['name']}',
+                                  '🌿 Virtual Cluster Member: $clusterName',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 12,
                                     color: Color(0xFF2C221E),
                                   ),
                                 ),
-                                Text(
-                                  'Combined Capacity: ${_cluster!['combined_capacity']} units/month for bulk procurement',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B5E57)),
-                                ),
+                                if (clusterCapacity != null)
+                                  Text(
+                                    'Combined Capacity: $clusterCapacity units/month for bulk procurement',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF6B5E57)),
+                                  ),
                               ],
                             ),
                           ),
@@ -513,7 +557,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   Row(
                     children: [
                       Text(
-                        '₹${price.toStringAsFixed(0)}',
+                        formatInr(price),
                         style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w900,
@@ -627,7 +671,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                           ),
                         ),
                         Text(
-                          '₹${(price * _quantity).toStringAsFixed(0)}',
+                          formatInr(price * _quantity),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -746,92 +790,107 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   const SizedBox(height: 20),
 
                   // ── Digital Craft Passport with QR Code ────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFEADBCE), width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFE8F5E9),
-                                          shape: BoxShape.circle,
+                  // Truthful: only for real product IDs; missing IDs explain instead.
+                  if (passportUrl.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFEADBCE), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFE8F5E9),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.verified_rounded, color: Color(0xFF2E7D32), size: 18),
                                         ),
-                                        child: const Icon(Icons.verified_rounded, color: Color(0xFF2E7D32), size: 18),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Expanded(
-                                        child: Text(
-                                          'Digital Craft Passport',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 15,
-                                            color: Color(0xFF2C221E),
+                                        const SizedBox(width: 8),
+                                        const Expanded(
+                                          child: Text(
+                                            'Digital Craft Passport',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 15,
+                                              color: Color(0xFF2C221E),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Scan this QR code to verify GI certification, artisan heritage story, and authentic sustainable materials.',
-                                    style: TextStyle(fontSize: 12, color: Color(0xFF6B5E57), height: 1.4),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextButton.icon(
-                                    icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                                    label: const Text('View Web Certificate', style: TextStyle(fontWeight: FontWeight.w700)),
-                                    onPressed: _showPassportPreviewDialog,
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppTheme.primaryTerracotta,
-                                      padding: EdgeInsets.zero,
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'Scan this QR code to verify GI certification, artisan heritage story, and authentic sustainable materials.',
+                                      style: TextStyle(fontSize: 12, color: Color(0xFF6B5E57), height: 1.4),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                                      label: const Text('View Web Certificate', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      onPressed: _showPassportPreviewDialog,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppTheme.primaryTerracotta,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            // QR Code — thicker border for clarity
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFD4AF37), width: 2),
+                              const SizedBox(width: 12),
+                              // QR Code — thicker border for clarity
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFD4AF37), width: 2),
+                                ),
+                                child: QrImageView(
+                                  data: passportUrl,
+                                  version: QrVersions.auto,
+                                  size: 92,
+                                  backgroundColor: Colors.white,
+                                ),
                               ),
-                              child: QrImageView(
-                                data: passportUrl,
-                                version: QrVersions.auto,
-                                size: 92,
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFEADBCE), width: 1.5),
+                      ),
+                      child: const Text(
+                        'Digital Craft Passport is unavailable for this item.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 40),
                 ],

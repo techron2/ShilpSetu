@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/buyer_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/inr.dart';
 
 /// Modal bottom sheet for reviewing order details and confirming Cash on Delivery checkout.
 class PaymentMethodSheet extends StatefulWidget {
@@ -186,7 +187,7 @@ class _PaymentMethodSheetState extends State<PaymentMethodSheet> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '₹${widget.totalPrice.toStringAsFixed(0)}',
+                          formatInr(widget.totalPrice),
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
