@@ -88,3 +88,7 @@ frontend/.flutter-plugins-dependencies
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local browser automation artifacts
+.playwright-cli/
+output/playwright/
