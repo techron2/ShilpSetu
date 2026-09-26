@@ -7,6 +7,7 @@ import 'package:record/record.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../services/assistant_service.dart';
+import '../../services/recording_file.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_back_button.dart';
 
@@ -171,13 +172,15 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen>
         return;
       }
 
+      final recordingPath = await createRecordingPath();
+
       await _audioRecorder.start(
         const RecordConfig(
           encoder: AudioEncoder.wav,
           sampleRate: 16000,
           numChannels: 1,
         ),
-        path: '',
+        path: recordingPath,
       );
 
       setState(() {
@@ -220,6 +223,14 @@ class _BusinessAssistantScreenState extends State<BusinessAssistantScreen>
           final blobRes = await http.get(Uri.parse(audioPath));
           if (blobRes.statusCode == 200) {
             audioBytes = blobRes.bodyBytes;
+          }
+        } else {
+          debugPrint('[BusinessAssistant] Reading recorded audio file: $audioPath');
+          audioBytes = await readRecordedAudio(audioPath);
+          if (audioBytes != null) {
+            debugPrint('[BusinessAssistant] Read ${audioBytes.length} bytes from recorded file');
+          } else {
+            debugPrint('[BusinessAssistant] Recorded audio file was missing or empty');
           }
         }
       }
