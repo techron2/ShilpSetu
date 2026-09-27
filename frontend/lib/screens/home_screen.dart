@@ -557,7 +557,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'title': language.getText('banner_passport_title'),
         'desc': language.getText('banner_passport_desc'),
         'cta': language.getText('banner_passport_cta'),
-        'icon': Icons.verified_outlined,
+        'icon': Icons.description_outlined,
         'gradient': const [Color(0xFF1E5244), Color(0xFF2C7A63)],
         'action': () => context.read<NavigationProvider>().setIndex(1),
       },

@@ -42,8 +42,8 @@ def get_artisan_catalog():
 def voice_to_listing():
     """Accepts an audio file + language code (e.g. 'hi', 'mr', 'ta', 'en'),
 
-    transcribes speech, extracts structured fields via Gemini AI,
-    and returns bilingual English & Hindi product listings.
+    transcribes uploaded speech when needed, attempts Gemini listing extraction
+    with a deterministic fallback, and returns bilingual English & Hindi listings.
     """
     lang_code = request.form.get('language') or request.args.get('language') or 'hi'
     audio_file = request.files.get('audio') or request.files.get('file')
@@ -106,7 +106,10 @@ def voice_to_listing():
                 "friendly_error": ai_result.get("friendly_error", "विवरण तैयार करने में समस्या आई, कृपया पुनः प्रयास करें")
             }), 500
 
-        return jsonify(ai_result), 200
+        response_data = dict(ai_result)
+        # Extraction provenance describes catalog structuring only, not speech-to-text.
+        response_data["ai_structured"] = ai_result.get("ai_structured") is True
+        return jsonify(response_data), 200
 
     except Exception as e:
         return jsonify({

@@ -13,7 +13,7 @@ import '../../widgets/app_back_button.dart';
 const List<String> _kCategories = canonicalProductCategories;
 
 /// Step 3 of the AI Catalog Flow:
-/// Review and edit the AI-generated bilingual (EN & HI) product listing.
+/// Review and edit the bilingual (EN & HI) product listing draft.
 class ListingReviewScreen extends StatefulWidget {
   final String imageUrl;
   final String initialTitleEn;
@@ -25,6 +25,8 @@ class ListingReviewScreen extends StatefulWidget {
   final String transcript;
   final CatalogPhotoProvenance photoProvenance;
   final CatalogDescriptionProvenance descriptionProvenance;
+  final bool aiStructured;
+  final bool isMock;
 
   const ListingReviewScreen({
     super.key,
@@ -38,6 +40,8 @@ class ListingReviewScreen extends StatefulWidget {
     required this.transcript,
     this.photoProvenance = CatalogPhotoProvenance.enhancedReal,
     this.descriptionProvenance = CatalogDescriptionProvenance.recordedVoice,
+    this.aiStructured = false,
+    this.isMock = false,
   });
 
   @override
@@ -286,7 +290,11 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '✨ AI द्वारा तैयार (AI Generated)',
+                              widget.isMock
+                                  ? 'DEMO LISTING DATA'
+                                  : widget.aiStructured
+                                  ? '✨ AI-सहायता प्राप्त ड्राफ्ट (AI-assisted draft)'
+                                  : '📝 मानक विवरण (Standard extraction)',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,

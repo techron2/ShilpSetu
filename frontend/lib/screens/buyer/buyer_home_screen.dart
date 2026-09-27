@@ -117,7 +117,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Discover authentic Indian handicrafts',
+                          'Discover crafts from artisans',
                           style: TextStyle(color: Colors.white70, fontSize: 14),
                         ),
                       ],

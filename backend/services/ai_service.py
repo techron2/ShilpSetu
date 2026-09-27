@@ -52,55 +52,53 @@ def _translate_text(text: str, target_lang: str) -> str:
 
 
 def _fallback_artisan_extraction(transcript: str, lang_code: str = "hi") -> dict:
-    """Rule-based intelligent fallback for Indian artisan handicraft transcripts
-
-    when Gemini API key is not configured or network is offline.
-    """
+    """Conservatively structure a listing using only the artisan's transcript."""
     t_lower = transcript.lower()
 
-    # Determine likely category
+    # Category classification uses explicit transcript words; all other product
+    # details remain the artisan's own words rather than inferred attributes.
     if any(w in t_lower for w in ["मधुबनी", "madhubani", "painting", "चित्रकला", "चित्र", "आर्ट", "पेंटिंग"]):
         category = "Painting"
-        title_hi = "पारंपरिक हस्तनिर्मित मधुबनी लोक चित्रकला"
-        title_en = "Handcrafted Traditional Bihar Madhubani Folk Painting"
-        desc_hi = "बिहार की समृद्ध सांस्कृतिक विरासत को दर्शाती यह सुंदर हस्तनिर्मित मधुबनी पेंटिंग प्राकृतिक रंगों और पारंपरिक आकृतियों से तैयार की गई है।"
-        desc_en = "Authentic handcrafted Madhubani painting from Bihar, adorned with vibrant traditional motifs and natural folk art aesthetics."
-        features = ["बिहार की प्रामाणिक मधुबनी लोक कला", "100% प्राकृतिक और हस्तनिर्मित", "दीवार की सजावट और उपहार के लिए आदर्श"]
     elif any(w in t_lower for w in ["मिट्टी", "कुल्हड़", "कुल्हड़", "मटका", "घड़ा", "pottery", "clay", "terracotta", "kulhad"]):
         category = "Pottery"
-        title_hi = "हस्तनिर्मित पारंपरिक टेराकोटा कुल्हड़"
-        title_en = "Handcrafted Traditional Terracotta Kulhad Set"
-        desc_hi = "पारंपरिक चाक पर शुद्ध प्राकृतिक मिट्टी से तैयार किया गया पर्यावरण-अनुकूल कुल्हड़ सेट। चाय और पेय पदार्थों के लिए उत्तम।"
-        desc_en = "Eco-friendly clay kulhad set handcrafted on traditional potter wheels from pure natural river clay. Perfect for tea and festive beverages."
-        features = ["100% प्राकृतिक शुद्ध चिकनी मिट्टी", "माइक्रोवेव और पर्यावरण अनुकूल", "पारंपरिक भारतीय शिल्प कला"]
     elif any(w in t_lower for w in ["साड़ी", "दुपट्टा", "कपड़ा", "सिल्क", "प्रिंट", "textile", "cotton", "saree", "stole", "block print"]):
         category = "Textiles"
-        title_hi = "हैंड ब्लॉक प्रिंट प्राकृतिक कॉटन स्टोल"
-        title_en = "Hand Block Printed Natural Cotton Stole"
-        desc_hi = "प्राकृतिक वनस्पति रंगों और पारंपरिक लकड़ी के ठप्पों से तैयार किया गया हस्तनिर्मित कॉटन वस्त्र।"
-        desc_en = "Handmade artisan cotton textile printed using heritage hand-carved wooden blocks and organic botanical dyes."
-        features = ["100% शुद्ध सूती कपड़ा", "प्राकृतिक हर्बल रंग", "पारंपरिक कारीगरी"]
     elif any(w in t_lower for w in ["पीतल", "धातु", "कांसा", "मूर्ति", "brass", "metal", "dhokra", "idol"]):
         category = "Metal Craft"
-        title_hi = "पारंपरिक ढोकरा पीतल शिल्प मूर्ति"
-        title_en = "Dhokra Tribal Brass Handcrafted Figurine"
-        desc_hi = "हजारों वर्ष पुरानी लॉस्ट-वैक्स धातु ढलाई तकनीक से ग्रामीण कारीगरों द्वारा बनाई गई अनोखी कलाकृति।"
-        desc_en = "Unique tribal brass artifact created using ancient lost-wax metal casting techniques by indigenous artisans."
-        features = ["शुद्ध पीतल और कांस्य धातु", "हस्तनिर्मित आदिवासी शिल्प", "घर की सजावट के लिए आदर्श"]
     elif any(w in t_lower for w in ["लकड़ी", "काष्ठ", "wood", "wooden", "carving"]):
         category = "Wood Craft"
-        title_hi = "हस्तनिर्मित नक्काशीदार लकड़ी का शोपीस"
-        title_en = "Handcrafted Carved Wood Decorative Craft"
-        desc_hi = "मजबूत शीशम की लकड़ी पर बारीक पारंपरिक नक्काशी द्वारा तैयार किया गया कलात्मक उत्पाद।"
-        desc_en = "Artistic decorative woodwork carved meticulously by hand from seasoned natural Sheesham hardwood."
-        features = ["प्राकृतिक शीशम की लकड़ी", "बारीक हाथ की नक्काशी", "दीर्घकालिक टिकाऊ पॉलिश"]
+    elif any(w in t_lower for w in ["आभूषण", "गहना", "jewellery", "jewelry"]):
+        category = "Jewellery"
+    elif any(w in t_lower for w in ["कढ़ाई", "कशीदाकारी", "embroidery"]):
+        category = "Embroidery"
+    elif any(w in t_lower for w in ["चमड़ा", "चर्म", "leather"]):
+        category = "Leather"
     else:
         category = "Other"
-        title_hi = f"हस्तशिल्प: {transcript[:30].strip()}"
-        title_en = f"Handcrafted Artisan Craft - {transcript[:30].strip()}"
-        desc_hi = f"{transcript}। यह उत्पाद कुशल ग्रामीण शिल्पकार द्वारा पूर्णतः हस्तनिर्मित है।"
-        desc_en = f"Handcrafted artisan craft created with traditional Indian heritage techniques."
-        features = ["हस्तनिर्मित गुणवत्ता", "प्राकृतिक सामग्रियां", "स्थानीय कारीगर सहायता"]
+
+    neutral_titles = {
+        "Textiles": ("Artisan Textile Product", "कारीगर का वस्त्र उत्पाद"),
+        "Pottery": ("Artisan Pottery Product", "कारीगर का मिट्टी शिल्प उत्पाद"),
+        "Jewellery": ("Artisan Jewellery", "कारीगर की आभूषण कला"),
+        "Embroidery": ("Artisan Embroidery", "कारीगर की कढ़ाई कला"),
+        "Wood Craft": ("Artisan Wood Craft Product", "कारीगर का लकड़ी शिल्प उत्पाद"),
+        "Leather": ("Artisan Leather Product", "कारीगर का चमड़ा उत्पाद"),
+        "Painting": ("Artisan Painting", "कारीगर की चित्रकला"),
+        "Metal Craft": ("Artisan Metal Craft", "कारीगर का धातु शिल्प"),
+        "Other": ("Artisan Craft Product", "कारीगर का शिल्प उत्पाद"),
+    }
+    title_en, title_hi = neutral_titles[category]
+
+    source_text = transcript.strip()
+    if lang_code == "en":
+        desc_en = source_text
+        desc_hi = _translate_text(source_text, "hi")
+    elif lang_code == "hi":
+        desc_hi = source_text
+        desc_en = _translate_text(source_text, "en")
+    else:
+        desc_en = _translate_text(source_text, "en")
+        desc_hi = _translate_text(source_text, "hi")
 
     return {
         "title": title_en,
@@ -110,7 +108,8 @@ def _fallback_artisan_extraction(transcript: str, lang_code: str = "hi") -> dict
         "description_en": desc_en,
         "description_hi": desc_hi,
         "category": category,
-        "key_features": features
+        "key_features": [],
+        "ai_structured": False,
     }
 
 
@@ -123,7 +122,7 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
     if not api_key:
-        logger.info("GEMINI_API_KEY not found in environment. Using intelligent artisan fallback extractor.")
+        logger.info("GEMINI_API_KEY not found in environment. Using standard listing extraction.")
         return _fallback_artisan_extraction(transcript, lang_code)
 
     try:
@@ -133,17 +132,25 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
         client = genai.Client(api_key=api_key)
 
         prompt = f"""
-        You are HunarSathi AI, an expert e-commerce catalog assistant empowering marginalized Indian rural artisans.
-        A traditional artisan spoke this description of their craft:
+        You are HunarSathi's catalog assistant. An artisan provided this product description:
         "{transcript}"
 
+        Use ONLY facts supported by the artisan's transcript. You may improve grammar,
+        structure, clarity, translation, and marketplace readability, but do not add product facts.
+        Do not infer or invent material, geographic origin or region, artisan lineage or generations
+        of heritage, GI or other certification, authenticity verification, sustainability,
+        eco-friendliness, natural or organic composition, production technique, dimensions,
+        durability, microwave or food safety, or cultural history unless explicitly stated in the
+        transcript. If a detail is missing, omit it. Do not turn a category guess into a product fact.
+
         Extract a structured bilingual e-commerce product listing:
-        1. "title_en": Clear, attractive, professional product title in English (3 to 8 words).
-        2. "title_hi": Clear, attractive product title in Hindi (3 to 8 words).
-        3. "description_en": Compelling product description in English (2-3 sentences) highlighting craft tradition, material, and usefulness.
-        4. "description_hi": Compelling product description in Hindi (2-3 sentences) highlighting craft tradition, material, and usefulness.
+        1. "title_en": Clear product title in English based only on the transcript.
+        2. "title_hi": Clear product title in Hindi based only on the transcript.
+        3. "description_en": Accurate English description reflecting only the transcript.
+        4. "description_hi": Accurate Hindi description reflecting only the transcript.
         5. "category": EXACTLY one of: "Textiles", "Pottery", "Jewellery", "Embroidery", "Wood Craft", "Leather", "Painting", "Metal Craft", "Other".
-        6. "key_features": An array of 3 to 4 short bullet highlights (e.g. material, handmade quality, heritage).
+        6. "key_features": Zero or more short features directly supported by the transcript. Use an
+        empty array when no distinct features are supported; do not invent items to fill a quota.
 
         Output ONLY valid JSON matching this schema:
         {{
@@ -186,12 +193,29 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
             resp_text = re.sub(r"```$", "", resp_text).strip()
 
         parsed = json.loads(resp_text)
-        title_en = parsed.get("title_en") or parsed.get("title", "")
-        title_hi = parsed.get("title_hi") or title_en
-        desc_en = parsed.get("description_en") or parsed.get("description", "")
-        desc_hi = parsed.get("description_hi") or desc_en
-        category = normalize_category(parsed.get("category", "Other"), default="Other")
-        features = parsed.get("key_features", [])
+        if not isinstance(parsed, dict):
+            raise ValueError("Gemini listing response must be a JSON object")
+        title_en = parsed.get("title_en") or parsed.get("title") or ""
+        title_hi = parsed.get("title_hi") or ""
+        desc_en = parsed.get("description_en") or parsed.get("description") or ""
+        desc_hi = parsed.get("description_hi") or ""
+        raw_category = parsed.get("category")
+        if not all(isinstance(value, str) for value in (title_en, title_hi, desc_en, desc_hi)):
+            raise ValueError("Gemini listing fields must be text")
+        if (
+            not (title_en or title_hi)
+            or not (desc_en or desc_hi)
+            or not isinstance(raw_category, str)
+            or not raw_category.strip()
+        ):
+            raise ValueError("Gemini listing response did not contain usable listing fields")
+        category = normalize_category(raw_category, default="Other")
+        raw_features = parsed.get("key_features", [])
+        features = (
+            [feature.strip() for feature in raw_features if isinstance(feature, str) and feature.strip()]
+            if isinstance(raw_features, list)
+            else []
+        )
 
         logger.info(f"Gemini structured extraction success: {title_en} [{category}]")
         return {
@@ -202,11 +226,12 @@ def extract_product_listing_gemini(transcript: str, lang_code: str = "hi") -> di
             "description_en": desc_en,
             "description_hi": desc_hi,
             "category": category,
-            "key_features": features
+            "key_features": features,
+            "ai_structured": True,
         }
 
     except Exception as e:
-        logger.warning(f"Gemini API generation failed ({e}). Using intelligent fallback extractor.")
+        logger.warning(f"Gemini API generation failed ({e}). Using standard listing extraction.")
         return _fallback_artisan_extraction(transcript, lang_code)
 
 
@@ -215,7 +240,8 @@ def process_voice_to_catalog(transcript: str, lang_code: str = "hi") -> dict:
 
     1. Extracts structured fields & generates bilingual titles/descriptions directly via Gemini (Choice B)
     2. Uses HTML-sanitized translation only if bilingual fields are missing
-    3. Returns { title_en, title_hi, description_en, description_hi, category, key_features }
+    3. Returns bilingual fields plus ai_structured, which describes listing-field
+       extraction only and does not describe speech-to-text.
     """
     if not transcript or not transcript.strip():
         return {
@@ -252,7 +278,8 @@ def process_voice_to_catalog(transcript: str, lang_code: str = "hi") -> dict:
         "description_en": desc_en,
         "description_hi": desc_hi,
         "category": category,
-        "key_features": features
+        "key_features": features,
+        "ai_structured": extracted.get("ai_structured") is True,
     }
 
 

@@ -186,6 +186,8 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen> with SingleTick
                 descriptionProvenance: demoTranscript == null
                     ? CatalogDescriptionProvenance.recordedVoice
                     : CatalogDescriptionProvenance.demoTranscript,
+                aiStructured: result['ai_structured'] == true,
+                isMock: result['is_mock'] == true,
               ),
             ),
           );

@@ -168,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final subText = user?.email.isNotEmpty == true
         ? user!.email
-        : (isBuyer ? 'Verified HunarSathi Buyer' : 'Gorakhpur Terracotta Cluster');
+        : (isBuyer ? 'HunarSathi Buyer' : 'Artisan profile');
 
     final currentLangOption = LanguageProvider.supportedLanguages.firstWhere(
       (l) => l.code == lang.currentLanguageCode,

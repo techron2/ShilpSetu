@@ -155,7 +155,7 @@ class LanguageProvider extends ChangeNotifier {
       'role_artisan': 'मैं एक शिल्पकार हूँ',
       'role_artisan_desc': 'अपने शिल्पों को सूचीबद्ध करें, सीधे ऑर्डर प्राप्त करें और बिक्री बढ़ाएं',
       'role_buyer': 'मैं एक खरीदार हूँ',
-      'role_buyer_desc': 'प्रमाणित कारीगरों से सीधे हस्तशिल्प खरीदें और थोक ऑर्डर दें',
+      'role_buyer_desc': 'कारीगरों से सीधे हस्तशिल्प खरीदें और थोक ऑर्डर दें',
 
       // Navigation Tabs & Screen Titles
       'tab_home': 'होम',
@@ -182,7 +182,7 @@ class LanguageProvider extends ChangeNotifier {
       'banner_cluster_desc': 'साथी शिल्पकारों से जुड़ें और बड़े बल्क ऑर्डर्स आसानी से पूरे करें',
       'banner_cluster_cta': 'क्लस्टर देखें',
       'banner_passport_title': 'डिजिटल शिल्प पासपोर्ट',
-      'banner_passport_desc': 'हर उत्पाद को दें प्रामाणिकता प्रमाण और खरीदारों का विश्वास',
+      'banner_passport_desc': 'उपलब्ध होने पर दर्ज कारीगर, शिल्प और क्षेत्र की जानकारी खरीदारों के साथ साझा करें।',
       'banner_passport_cta': 'अधिक जानें',
       'stat_products_listed': 'शिल्प उत्पाद',
       'stat_orders_to_pack': 'पैक करने योग्य',
@@ -393,7 +393,7 @@ class LanguageProvider extends ChangeNotifier {
       'role_artisan': 'I am an Artisan',
       'role_artisan_desc': 'List your crafts, receive direct orders, and grow your business',
       'role_buyer': 'I am a Buyer',
-      'role_buyer_desc': 'Source authentic crafts directly from verified artisans',
+      'role_buyer_desc': 'Source crafts directly from artisans and place bulk orders',
 
       // Navigation Tabs & Screen Titles
       'tab_home': 'Home',
@@ -420,7 +420,7 @@ class LanguageProvider extends ChangeNotifier {
       'banner_cluster_desc': 'Collaborate with fellow craftspeople to fulfill high-volume orders',
       'banner_cluster_cta': 'View Clusters',
       'banner_passport_title': 'Digital Craft Passport',
-      'banner_passport_desc': 'Provide tamper-proof authenticity and origin verification for buyers',
+      'banner_passport_desc': 'Share recorded artisan, craft and origin details with buyers when available.',
       'banner_passport_cta': 'Learn More',
       'stat_products_listed': 'Products Listed',
       'stat_orders_to_pack': 'Orders to Pack',
@@ -635,7 +635,7 @@ class LanguageProvider extends ChangeNotifier {
       'role_artisan': 'मी एक कारागीर आहे',
       'role_artisan_desc': 'तुमच्या हस्तकलांची यादी तयार करा, थेट ऑर्डर्स मिळवा आणि विक्री वाढवा',
       'role_buyer': 'मी एक खरेदीदार आहे',
-      'role_buyer_desc': 'प्रमाणित कारागिरांकडून थेट हस्तकला खरेदी करा आणि मोठ्या ऑर्डर्स द्या',
+      'role_buyer_desc': 'कारागिरांकडून थेट हस्तकला खरेदी करा आणि मोठ्या ऑर्डर्स द्या',
 
       // Navigation Tabs & Screen Titles
       'tab_home': 'मुख्य',
@@ -662,7 +662,7 @@ class LanguageProvider extends ChangeNotifier {
       'banner_cluster_desc': 'सहकारी कारागिरांशी हातमिळवणी करा आणि मोठ्या ऑर्डर्स पूर्ण करा',
       'banner_cluster_cta': 'क्लस्टर पहा',
       'banner_passport_title': 'डिजिटल शिल्प पासपोर्ट',
-      'banner_passport_desc': 'प्रत्येक उत्पादनाला द्या अस्सलतेचे प्रमाणपत्र आणि खरेदीदारांचा विश्वास',
+      'banner_passport_desc': 'उपलब्ध असल्यास नोंदवलेली कारागीर, हस्तकला आणि प्रदेशाची माहिती खरेदीदारांसोबत शेअर करा.',
       'banner_passport_cta': 'अधिक माहिती',
       'stat_products_listed': 'शिल्प उत्पादने',
       'stat_orders_to_pack': 'पॅक करायच्या ऑर्डर्स',

@@ -109,8 +109,8 @@ class AiCatalogService {
     }
   }
 
-  /// Sends recorded audio bytes or transcript to the backend for transcription,
-  /// structured extraction via Gemini AI, and bilingual translation.
+  /// Sends recorded audio bytes or transcript to the backend for transcription
+  /// when needed, Gemini-assisted structuring when available, and bilingual output.
   Future<Map<String, dynamic>> voiceToListing({
     List<int>? audioBytes,
     String? audioFilename,
@@ -119,21 +119,20 @@ class AiCatalogService {
   }) async {
     if (ApiConfig.useMock) {
       await Future.delayed(const Duration(milliseconds: 1500));
+      final transcript = directTranscript?.trim().isNotEmpty == true
+          ? directTranscript!.trim()
+          : 'Demo description for a craft listing.';
       return {
         'success': true,
-        'transcript': 'यह शुद्ध लाल मिट्टी से बना पारंपरिक टेराकोटा कुल्हड़ और चाय सेट है',
-        'title_en': 'Handcrafted Terracotta Chai Kulhad Set',
-        'title_hi': 'हस्तनिर्मित टेराकोटा चाय कुल्हड़ सेट',
-        'description_en': 'Pure natural terracotta clay kulhad set handcrafted on traditional potter wheel by rural artisans. 100% organic and eco-friendly.',
-        'description_hi': 'पारंपरिक चाक पर शुद्ध प्राकृतिक मिट्टी से तैयार किया गया पर्यावरण-अनुकूल कुल्हड़ सेट। 100% प्राकृतिक और जैविक।',
-        'category': 'Pottery',
-        'key_features': [
-          '100% शुद्ध प्राकृतिक चिकनी मिट्टी',
-          'पारंपरिक चाक पर हस्तनिर्मित',
-          'माइक्रोवेव और पर्यावरण अनुकूल',
-          'ग्रामीण शिल्पकार सहायता',
-        ],
+        'transcript': transcript,
+        'title_en': 'Demo Craft Product',
+        'title_hi': 'डेमो शिल्प उत्पाद',
+        'description_en': 'Demo listing based on the supplied description.',
+        'description_hi': 'दिए गए विवरण पर आधारित डेमो सूची।',
+        'category': 'Other',
+        'key_features': <String>[],
         'is_mock': true,
+        'ai_structured': false,
       };
     }
 

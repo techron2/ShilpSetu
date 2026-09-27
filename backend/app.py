@@ -18,9 +18,8 @@ logger = logging.getLogger("hunarsathi_backend")
 # Startup verification for GEMINI_API_KEY
 gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 if gemini_key:
-    masked_key = f"{gemini_key[:4]}...{gemini_key[-4:]}" if len(gemini_key) >= 8 else "***"
-    print(f"[STARTUP] GEMINI_API_KEY loaded: {masked_key} (len={len(gemini_key)})")
-    logger.info(f"[STARTUP] GEMINI_API_KEY loaded: {masked_key}")
+    print("[STARTUP] GEMINI_API_KEY: configured")
+    logger.info("[STARTUP] GEMINI_API_KEY: configured")
 else:
     print("[STARTUP] GEMINI_API_KEY: NOT SET")
     logger.warning("[STARTUP] GEMINI_API_KEY not found in environment (.env). Fallback modes will be active.")
