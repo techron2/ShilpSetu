@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../models/catalog_input_provenance.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
@@ -21,6 +23,8 @@ class ListingReviewScreen extends StatefulWidget {
   final String initialCategory;
   final List<String> keyFeatures;
   final String transcript;
+  final CatalogPhotoProvenance photoProvenance;
+  final CatalogDescriptionProvenance descriptionProvenance;
 
   const ListingReviewScreen({
     super.key,
@@ -32,6 +36,8 @@ class ListingReviewScreen extends StatefulWidget {
     required this.initialCategory,
     required this.keyFeatures,
     required this.transcript,
+    this.photoProvenance = CatalogPhotoProvenance.enhancedReal,
+    this.descriptionProvenance = CatalogDescriptionProvenance.recordedVoice,
   });
 
   @override
@@ -81,10 +87,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     super.initState();
     _titleEnCtrl = TextEditingController(text: widget.initialTitleEn);
     _titleHiCtrl = TextEditingController(text: widget.initialTitleHi);
-    _descEnCtrl  = TextEditingController(text: widget.initialDescEn);
-    _descHiCtrl  = TextEditingController(text: widget.initialDescHi);
-    _priceCtrl   = TextEditingController(text: '');
-    _stockCtrl   = TextEditingController(text: '10');
+    _descEnCtrl = TextEditingController(text: widget.initialDescEn);
+    _descHiCtrl = TextEditingController(text: widget.initialDescHi);
+    _priceCtrl = TextEditingController(text: '');
+    _stockCtrl = TextEditingController(text: '10');
 
     _selectedCategory = _kCategories.contains(normalizeProductCategory(widget.initialCategory, fallback: ''))
         ? normalizeProductCategory(widget.initialCategory, fallback: '')
@@ -102,9 +108,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
       'Leather': '300',
       'Other': '150',
     };
-    _materialCostCtrl = TextEditingController(
-      text: defaultMaterialCosts[_selectedCategory] ?? '80',
-    );
+    _materialCostCtrl = TextEditingController(text: defaultMaterialCosts[_selectedCategory] ?? '80');
 
     _fetchPriceSuggestion();
   }
@@ -152,9 +156,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
 
     // Build the final saved title & description
     // When Hindi tab is active, prioritize Hindi with English subtitle
-    final title = _titleHiCtrl.text.trim().isNotEmpty
-        ? _titleHiCtrl.text.trim()
-        : _titleEnCtrl.text.trim();
+    final title = _titleHiCtrl.text.trim().isNotEmpty ? _titleHiCtrl.text.trim() : _titleEnCtrl.text.trim();
 
     final desc = _descHiCtrl.text.trim().isNotEmpty
         ? '${_descHiCtrl.text.trim()}\n\n[English]: ${_descEnCtrl.text.trim()}'
@@ -215,17 +217,43 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
+              if (widget.photoProvenance == CatalogPhotoProvenance.demoSample ||
+                  widget.descriptionProvenance == CatalogDescriptionProvenance.demoTranscript) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryOchre.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.photoProvenance == CatalogPhotoProvenance.demoSample)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 4),
+                          child: Text('Demo sample photo', style: TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      if (widget.descriptionProvenance == CatalogDescriptionProvenance.demoTranscript) ...[
+                        const Text('Demo transcript input', style: TextStyle(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'This listing was generated from the prepared demo description, not recorded speech.',
+                          style: TextStyle(fontSize: 12, height: 1.35),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
               // Product Preview Header Card
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 padding: const EdgeInsets.all(12),
@@ -282,10 +310,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'श्रेणी: $_selectedCategory',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                           ),
                         ],
                       ),
@@ -307,16 +332,20 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.mic, color: AppTheme.secondaryOchre, size: 22),
+                      Icon(
+                        widget.descriptionProvenance == CatalogDescriptionProvenance.demoTranscript
+                            ? Icons.text_snippet_outlined
+                            : Icons.mic,
+                        color: AppTheme.secondaryOchre,
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'बोलकर कहा: "${widget.transcript}"',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic,
-                            color: AppTheme.darkIndigo,
-                          ),
+                          widget.descriptionProvenance == CatalogDescriptionProvenance.demoTranscript
+                              ? 'Demo text: "${widget.transcript}"'
+                              : 'बोलकर कहा: "${widget.transcript}"',
+                          style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppTheme.darkIndigo),
                         ),
                       ),
                     ],
@@ -328,19 +357,9 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
               // Bilingual Language Switcher Tabs
               Row(
                 children: [
-                  Expanded(
-                    child: _langTabButton(
-                      index: 0,
-                      label: '🇮🇳 हिंदी (Hindi)',
-                    ),
-                  ),
+                  Expanded(child: _langTabButton(index: 0, label: '🇮🇳 हिंदी (Hindi)')),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: _langTabButton(
-                      index: 1,
-                      label: '🌐 English',
-                    ),
-                  ),
+                  Expanded(child: _langTabButton(index: 1, label: '🌐 English')),
                 ],
               ),
 
@@ -399,9 +418,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedCategory,
                 decoration: _fieldDec(icon: Icons.category_outlined),
-                items: _kCategories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
+                items: _kCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                 onChanged: (v) {
                   if (v != null) {
                     setState(() {
@@ -417,8 +434,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         'Leather': '300',
                         'Other': '150',
                       };
-                      if (_materialCostCtrl.text.isEmpty ||
-                          defaultCosts.values.contains(_materialCostCtrl.text)) {
+                      if (_materialCostCtrl.text.isEmpty || defaultCosts.values.contains(_materialCostCtrl.text)) {
                         _materialCostCtrl.text = defaultCosts[v] ?? '80';
                       }
                     });
@@ -512,14 +528,10 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   backgroundColor: AppTheme.primaryTerracotta,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 3,
                 ),
-                icon: provider.isLoading
-                    ? const SizedBox.shrink()
-                    : const Icon(Icons.check_circle_rounded, size: 24),
+                icon: provider.isLoading ? const SizedBox.shrink() : const Icon(Icons.check_circle_rounded, size: 24),
                 label: provider.isLoading
                     ? const SizedBox(
                         height: 24,
@@ -549,10 +561,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.darkIndigo : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppTheme.darkIndigo : AppTheme.borderGrey,
-            width: 1.5,
-          ),
+          border: Border.all(color: isSelected ? AppTheme.darkIndigo : AppTheme.borderGrey, width: 1.5),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -570,11 +579,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
   Widget _label(String text) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AppTheme.darkIndigo,
-      ),
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.darkIndigo),
     );
   }
 
@@ -626,13 +631,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
         color: const Color(0xFFFBF8F3),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppTheme.secondaryOchre.withValues(alpha: 0.5), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -655,11 +654,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                   children: const [
                     Text(
                       '✨ AI अनुशंसित निष्पक्ष मूल्य (Fair-Trade Pricing)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.darkIndigo,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.darkIndigo),
                     ),
                     SizedBox(height: 2),
                     Text(
@@ -695,10 +690,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                     TextFormField(
                       controller: _materialCostCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: _fieldDec(
-                        icon: Icons.shopping_bag_outlined,
-                        hint: 'जैसे: 80',
-                      ),
+                      decoration: _fieldDec(icon: Icons.shopping_bag_outlined, hint: 'जैसे: 80'),
                       onChanged: (_) {
                         // User can press recalculate button to update suggestion
                       },
@@ -719,10 +711,12 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                       initialValue: _craftRegion,
                       decoration: _fieldDec(icon: Icons.location_on_outlined),
                       items: _kRegions
-                          .map((r) => DropdownMenuItem(
-                                value: r,
-                                child: Text(r, style: const TextStyle(fontSize: 13)),
-                              ))
+                          .map(
+                            (r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(r, style: const TextStyle(fontSize: 13)),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) {
                         if (v != null) {
@@ -750,11 +744,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
               const SizedBox(width: 6),
               ...['small', 'medium', 'large'].map((sizeKey) {
                 final isSelected = _craftSize == sizeKey;
-                final labels = {
-                  'small': 'छोटा (S)',
-                  'medium': 'मध्यम (M)',
-                  'large': 'बड़ा (L)',
-                };
+                final labels = {'small': 'छोटा (S)', 'medium': 'मध्यम (M)', 'large': 'बड़ा (L)'};
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
@@ -773,9 +763,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                       color: isSelected ? Colors.white : AppTheme.darkIndigo,
                     ),
                     backgroundColor: Colors.white,
-                    side: BorderSide(
-                      color: isSelected ? AppTheme.primaryTerracotta : Colors.grey.shade300,
-                    ),
+                    side: BorderSide(color: isSelected ? AppTheme.primaryTerracotta : Colors.grey.shade300),
                     visualDensity: VisualDensity.compact,
                   ),
                 );
@@ -865,11 +853,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
                         Expanded(
                           child: Text(
                             _priceExplanation!,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              height: 1.4,
-                              color: Colors.grey.shade800,
-                            ),
+                            style: TextStyle(fontSize: 12.5, height: 1.4, color: Colors.grey.shade800),
                           ),
                         ),
                       ],

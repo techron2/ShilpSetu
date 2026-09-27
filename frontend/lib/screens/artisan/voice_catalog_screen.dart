@@ -1,8 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
+
+import '../../models/catalog_input_provenance.dart';
 import '../../services/ai_catalog_service.dart';
 import '../../services/recording_file.dart';
 import '../../theme/app_theme.dart';
@@ -11,19 +14,22 @@ import 'listing_review_screen.dart';
 
 class VoiceCatalogScreen extends StatefulWidget {
   final String imageUrl;
+  final CatalogPhotoProvenance photoProvenance;
+  final AiCatalogService? aiCatalogService;
 
   const VoiceCatalogScreen({
     super.key,
     required this.imageUrl,
+    this.photoProvenance = CatalogPhotoProvenance.enhancedReal,
+    this.aiCatalogService,
   });
 
   @override
   State<VoiceCatalogScreen> createState() => _VoiceCatalogScreenState();
 }
 
-class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
-    with SingleTickerProviderStateMixin {
-  final AiCatalogService _aiService = AiCatalogService();
+class _VoiceCatalogScreenState extends State<VoiceCatalogScreen> with SingleTickerProviderStateMixin {
+  late final AiCatalogService _aiService;
   final AudioRecorder _audioRecorder = AudioRecorder();
 
   bool _isRecording = false;
@@ -38,14 +44,14 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
+    _aiService = widget.aiCatalogService ?? AiCatalogService();
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))
+      ..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
   }
 
   @override
@@ -71,11 +77,7 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
 
       // Configure recording: 16kHz mono WAV format (ideal for SpeechRecognition)
       await _audioRecorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.wav,
-          sampleRate: 16000,
-          numChannels: 1,
-        ),
+        const RecordConfig(encoder: AudioEncoder.wav, sampleRate: 16000, numChannels: 1),
         path: recordingPath,
       );
 
@@ -98,13 +100,13 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
     }
   }
 
-  Future<void> _stopAndProcessRecording({String? sampleTranscript}) async {
+  Future<void> _stopAndProcessRecording({String? demoTranscript}) async {
     _timer?.cancel();
 
     Uint8List? audioBytes;
     String? audioBlobPath;
 
-    if (sampleTranscript == null && _isRecording) {
+    if (demoTranscript == null && _isRecording) {
       try {
         debugPrint('[VoiceCatalog] Stopping AudioRecorder...');
         audioBlobPath = await _audioRecorder.stop();
@@ -143,14 +145,13 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
     try {
       Map<String, dynamic> result;
 
-      if (sampleTranscript != null) {
-        debugPrint('[VoiceCatalog] Using One-Tap test sample transcript...');
-        result = await _aiService.voiceToListing(
-          directTranscript: sampleTranscript,
-          language: _selectedLanguage,
-        );
+      if (demoTranscript != null) {
+        debugPrint('[VoiceCatalog] Using the prepared demo transcript; no audio/STT is used.');
+        result = await _aiService.voiceToListing(directTranscript: demoTranscript, language: _selectedLanguage);
       } else if (audioBytes != null && audioBytes.isNotEmpty) {
-        debugPrint('[VoiceCatalog] Sending real audio (${audioBytes.length} bytes) to /api/catalog/voice-to-listing...');
+        debugPrint(
+          '[VoiceCatalog] Sending real audio (${audioBytes.length} bytes) to /api/catalog/voice-to-listing...',
+        );
         result = await _aiService.voiceToListing(
           audioBytes: audioBytes,
           audioFilename: 'artisan_recording.wav',
@@ -174,13 +175,17 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
             MaterialPageRoute(
               builder: (_) => ListingReviewScreen(
                 imageUrl: widget.imageUrl,
+                photoProvenance: widget.photoProvenance,
                 initialTitleEn: result['title_en'] ?? 'Handcrafted Craft Item',
                 initialTitleHi: result['title_hi'] ?? 'हस्तनिर्मित शिल्प उत्पाद',
                 initialDescEn: result['description_en'] ?? '',
                 initialDescHi: result['description_hi'] ?? '',
                 initialCategory: result['category'] ?? 'Pottery',
                 keyFeatures: List<String>.from(result['key_features'] ?? []),
-                transcript: result['transcript'] ?? (sampleTranscript ?? ''),
+                transcript: result['transcript'] ?? (demoTranscript ?? ''),
+                descriptionProvenance: demoTranscript == null
+                    ? CatalogDescriptionProvenance.recordedVoice
+                    : CatalogDescriptionProvenance.demoTranscript,
               ),
             ),
           );
@@ -235,11 +240,7 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Row(
@@ -263,22 +264,27 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
-                            '✅ फोटो संवारी गई (1:1 Clean Studio)',
+                            switch (widget.photoProvenance) {
+                              CatalogPhotoProvenance.enhancedReal => 'Photo enhanced for listing',
+                              CatalogPhotoProvenance.originalFallback => 'Using original product photo',
+                              CatalogPhotoProvenance.demoSample => 'Demo sample image',
+                            },
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.successGreen,
+                              color: widget.photoProvenance == CatalogPhotoProvenance.enhancedReal
+                                  ? AppTheme.successGreen
+                                  : AppTheme.darkIndigo,
                             ),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'अब अपने शिल्प के बारे में बोलकर बताएं',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.darkIndigo,
-                            ),
+                            widget.photoProvenance == CatalogPhotoProvenance.demoSample
+                                ? 'No camera photo was used.'
+                                : 'अब अपने शिल्प के बारे में बोलकर बताएं',
+                            style: TextStyle(fontSize: 12, color: AppTheme.darkIndigo),
                           ),
                         ],
                       ),
@@ -330,35 +336,23 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryTerracotta.withValues(alpha: 0.1),
-                        blurRadius: 16,
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: AppTheme.primaryTerracotta.withValues(alpha: 0.1), blurRadius: 16)],
                   ),
                   child: Column(
                     children: const [
                       SizedBox(
                         height: 56,
                         width: 56,
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primaryTerracotta,
-                          strokeWidth: 4,
-                        ),
+                        child: CircularProgressIndicator(color: AppTheme.primaryTerracotta, strokeWidth: 4),
                       ),
                       SizedBox(height: 20),
                       Text(
-                        '✨ AI विवरण तैयार कर रहा है...',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.darkIndigo,
-                        ),
+                        'Preparing your bilingual listing…',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.darkIndigo),
                       ),
                       SizedBox(height: 6),
                       Text(
-                        'हिंदी और अंग्रेजी दोनों में सूची बनाई जा रही है\n(Extracting listing & translating to English & Hindi)',
+                        'Your product details are being prepared in Hindi and English.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
@@ -385,15 +379,12 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                           height: 140,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _isRecording
-                                ? Colors.redAccent
-                                : AppTheme.primaryTerracotta,
+                            color: _isRecording ? Colors.redAccent : AppTheme.primaryTerracotta,
                             boxShadow: [
                               BoxShadow(
-                                color: (_isRecording
-                                        ? Colors.redAccent
-                                        : AppTheme.primaryTerracotta)
-                                    .withValues(alpha: 0.4),
+                                color: (_isRecording ? Colors.redAccent : AppTheme.primaryTerracotta).withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: _isRecording ? 30 : 16,
                                 spreadRadius: _isRecording ? 8 : 2,
                               ),
@@ -416,11 +407,7 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                 if (_isRecording) ...[
                   Text(
                     _formatTimer(_recordSeconds),
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.redAccent,
-                    ),
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.redAccent),
                   ),
                   const SizedBox(height: 8),
                   // Animated Waveform Indicator
@@ -442,35 +429,24 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                   const SizedBox(height: 12),
                   const Text(
                     'रोकने के लिए दोबारा दबाएं (Tap again to stop)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.darkIndigo,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.darkIndigo),
                   ),
                 ] else ...[
                   const Text(
                     'माइक दबाकर बोलना शुरू करें',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.darkIndigo,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.darkIndigo),
                   ),
                   const SizedBox(height: 6),
                   const Text(
                     'जैसे: "यह शुद्ध लाल मिट्टी से बना टेराकोटा कुल्हड़ है, चाय के लिए बढ़िया"',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
 
                 const SizedBox(height: 40),
 
-                // Quick Demo Pill: Sample Artisan Voice
+                // Explicit direct-text demo path; this does not record or transcribe audio.
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -482,12 +458,14 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                   child: Column(
                     children: [
                       const Text(
-                        '💡 त्वरित परीक्षण (One-Tap Test):',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.secondaryOchre,
-                        ),
+                        '💡 Quick demo (prepared text):',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.secondaryOchre),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Uses a prepared sample description; microphone and speech transcription are not used.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
                       ),
                       const SizedBox(height: 10),
                       ElevatedButton.icon(
@@ -495,19 +473,15 @@ class _VoiceCatalogScreenState extends State<VoiceCatalogScreen>
                           backgroundColor: AppTheme.darkIndigo,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.record_voice_over_rounded, size: 20),
-                        label: const Text(
-                          'नमूना कारीगर आवाज़ से विवरण बनाएं',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        onPressed: () => _stopAndProcessRecording(
-                          sampleTranscript:
-                              'यह शुद्ध लाल मिट्टी से बना पारंपरिक टेराकोटा कुल्हड़ और चाय सेट है, गोरखपुर के कारीगरों द्वारा चाक पर हाथ से बनाया गया',
-                        ),
+                        icon: const Icon(Icons.text_snippet_outlined, size: 20),
+                        label: const Text('Use demo transcript', style: TextStyle(fontWeight: FontWeight.w700)),
+                        onPressed: _isRecording
+                            ? null
+                            : () => _stopAndProcessRecording(
+                                demoTranscript: 'यह शुद्ध लाल मिट्टी से बना पारंपरिक टेराकोटा कुल्हड़ और चाय सेट है, गोरखपुर के कारीगरों द्वारा चाक पर हाथ से बनाया गया',
+                              ),
                       ),
                     ],
                   ),

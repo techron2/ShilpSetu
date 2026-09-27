@@ -71,6 +71,7 @@ class AiCatalogService {
         'success': true,
         'image_url': 'https://images.unsplash.com/photo-1615865417491-9941019fbc00?w=800',
         'filename': filename,
+        'is_mock': true,
       };
     }
 
