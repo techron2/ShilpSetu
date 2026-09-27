@@ -148,7 +148,7 @@ class _ListingReviewScreenState extends State<ListingReviewScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AppAuthProvider>();
-    final artisanId = auth.firebaseUser?.uid ?? 'artisan_001';
+    final artisanId = auth.currentArtisanId;
 
     // Build the final saved title & description
     // When Hindi tab is active, prioritize Hindi with English subtitle
