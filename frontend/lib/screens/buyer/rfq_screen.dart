@@ -11,9 +11,9 @@ import 'supplier_comparison_screen.dart';
 /// RFQ creation screen.
 ///
 /// The buyer can type a free-text requirement (e.g. "I need 200 cotton sarees
-/// for a retail chain by next month, budget ₹50,000"). The text is sent to
-/// the backend which uses Gemini to parse it into a structured RFQ. The buyer
-/// reviews the AI-structured result and confirms.
+/// for a retail chain by next month, budget ₹50,000"). The backend uses Gemini
+/// when available and a deterministic parser otherwise. The buyer reviews and
+/// confirms the result before finding suppliers.
 class RfqScreen extends StatefulWidget {
   /// Optional pre-filled product info from product detail screen.
   final Map<String, dynamic>? prefilledProduct;
@@ -151,7 +151,7 @@ class _RfqScreenState extends State<RfqScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'AI-Powered RFQ Generator',
+                          'AI-assisted RFQ',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -160,7 +160,7 @@ class _RfqScreenState extends State<RfqScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Describe what you need in plain language. Our AI will structure it into a professional quotation request.',
+                          'Describe what you need in plain language. HunarSathi uses AI when available and falls back to basic structuring if needed.',
                           style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
                         ),
                       ],
@@ -280,10 +280,10 @@ class _RfqScreenState extends State<RfqScreen> {
                       width: 18, height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.auto_awesome_rounded),
+                  : const Icon(Icons.post_add_rounded),
               label: Text(_isLoading && _parsedRfq == null
-                  ? 'Generating RFQ…'
-                  : '✨ Generate RFQ with AI'),
+                  ? 'Structuring requirement…'
+                  : 'Generate RFQ'),
               onPressed: _isLoading ? null : _generateRfq,
             ),
 
@@ -293,37 +293,7 @@ class _RfqScreenState extends State<RfqScreen> {
               const Divider(),
               const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome_rounded,
-                      color: AppTheme.secondaryOchre, size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'AI-Structured RFQ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.darkIndigo,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'AI Parsed ✓',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.successGreen,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              RfqParsingStatus(aiParsed: _parsedRfq!.aiParsed),
               const SizedBox(height: 16),
 
               _RfqCard(rfq: _parsedRfq!),
@@ -386,6 +356,56 @@ class _RfqScreenState extends State<RfqScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class RfqParsingStatus extends StatelessWidget {
+  final bool aiParsed;
+
+  const RfqParsingStatus({super.key, required this.aiParsed});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = aiParsed ? 'AI-Structured RFQ' : 'Structured RFQ';
+    final label = aiParsed ? 'AI Parsed' : 'Rule-based fallback';
+    final color = aiParsed ? AppTheme.successGreen : const Color(0xFF6B7280);
+    final background = aiParsed ? const Color(0xFFE8F5E9) : const Color(0xFFF3F4F6);
+
+    return Row(
+      children: [
+        Icon(
+          aiParsed ? Icons.auto_awesome_rounded : Icons.rule_rounded,
+          color: aiParsed ? AppTheme.secondaryOchre : color,
+          size: 20,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkIndigo,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

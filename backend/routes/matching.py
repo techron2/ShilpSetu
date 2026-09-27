@@ -14,10 +14,8 @@ Algorithm:
   5. TF-IDF vectorise all strings together.
   6. Cosine-similarity rank, return top-5 with scores.
 
-Upgrade path:
-  Replace TF-IDF with Gemini text-embedding-004 vectors for true semantic
-  similarity. The rest of the pipeline (cosine similarity, ranking) stays
-  identical.
+The current results are deterministic lexical text-similarity rankings, not
+AI confidence scores or semantic-embedding matches.
 """
 import logging
 from flask import Blueprint, jsonify, request

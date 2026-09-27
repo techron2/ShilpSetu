@@ -1,9 +1,9 @@
 """
 POST /api/rfq
 --------------
-Accepts free-text buyer requirements and uses the Gemini API to parse them
-into a structured RFQ (Request for Quotation) object, then saves it to
-Firestore "rfqs" collection.
+Accepts free-text buyer requirements and uses Gemini when available, with a
+deterministic parser fallback, to produce a structured RFQ (Request for
+Quotation) object. The RFQ is then saved to Firestore's "rfqs" collection.
 
 Example input:
     "I need 200 cotton sarees for a retail chain by next month, budget around ₹50,000"
@@ -20,6 +20,7 @@ Example output (Gemini-structured):
 """
 import json
 import logging
+import math
 import os
 import re
 from datetime import datetime, timezone
@@ -60,6 +61,15 @@ _FALLBACK_CATEGORY_KEYWORDS = {
     "accessory": "Other",
 }
 
+_GEMINI_RFQ_FIELDS = (
+    'category',
+    'quantity',
+    'target_price',
+    'deadline',
+    'specifications',
+    'description',
+)
+
 
 def _gemini_parse_rfq(requirement_text: str) -> dict:
     """Send the buyer requirement text to Gemini and return a structured dict."""
@@ -99,7 +109,7 @@ Rules:
 - Return ONLY the JSON object, no markdown, no explanation."""
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.8-flash",
         contents=prompt
     )
     raw = response.text.strip()
@@ -110,11 +120,44 @@ Rules:
     return json.loads(raw)
 
 
+def _is_valid_gemini_rfq(structured) -> bool:
+    """Reject malformed model output so it takes the deterministic fallback."""
+    if not isinstance(structured, dict) or set(structured) != set(_GEMINI_RFQ_FIELDS):
+        return False
+    if not isinstance(structured.get('category'), str) or not structured['category'].strip():
+        return False
+    quantity = structured.get('quantity')
+    if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 1:
+        return False
+    target_price = structured.get('target_price')
+    if (
+        isinstance(target_price, bool)
+        or not isinstance(target_price, (int, float))
+        or not math.isfinite(target_price)
+        or target_price < 0
+    ):
+        return False
+    deadline = structured.get('deadline')
+    if not isinstance(deadline, str) or not deadline.strip():
+        return False
+    try:
+        datetime.strptime(deadline, '%Y-%m-%d')
+    except ValueError:
+        return False
+    return all(
+        isinstance(structured.get(field), str) and structured[field].strip()
+        for field in ('specifications', 'description')
+    )
+
+
 def _fallback_parse_rfq(requirement_text: str) -> dict:
     """Simple regex/keyword fallback if Gemini is unavailable."""
     text = requirement_text.lower()
     # Detect quantity: look for numbers near "pieces", "pcs", "units", "sarees", etc.
-    qty_match = re.search(r'(\d+)\s*(?:pieces?|pcs?|units?|nos?|items?|pairs?|sets?)', text)
+    qty_match = re.search(
+        r'(\d+)\s*(?:[a-z]+\s+)?(?:pieces?|pcs?|units?|nos?|items?|pairs?|sets?|cups?)\b',
+        text,
+    )
     quantity = int(qty_match.group(1)) if qty_match else 1
 
     # Detect budget
@@ -171,13 +214,15 @@ def create_rfq():
 
     # ── Parse via Gemini (with fallback) ─────────────────────────────────────
     structured = None
-    ai_used = True
+    ai_used = False
     try:
         structured = _gemini_parse_rfq(requirement_text)
+        if not _is_valid_gemini_rfq(structured):
+            raise ValueError("Gemini returned an incomplete or invalid RFQ")
+        ai_used = True
         logger.info(f"Gemini parsed RFQ for buyer {buyer_id}: {structured}")
     except Exception as e:
         logger.warning(f"Gemini RFQ parsing failed ({e}), using fallback")
-        ai_used = False
         structured = _fallback_parse_rfq(requirement_text)
 
     # Defensively normalize Gemini/category output to canonical vocabulary.
@@ -193,7 +238,8 @@ def create_rfq():
             "source": "no_db",
             "ai_structured": ai_used,
             "rfq": {**structured, "id": "offline", "buyer_id": buyer_id,
-                    "requirement_text": requirement_text, "status": "open"}
+                    "requirement_text": requirement_text, "status": "open",
+                    "ai_parsed": ai_used}
         }), 200
 
     try:
@@ -205,8 +251,8 @@ def create_rfq():
             "requirement_text": requirement_text,
             "status":           "open",
             "created_at":       now_iso,
-            "ai_parsed":        ai_used,
             **structured,
+            "ai_parsed":        ai_used,
         }
         doc_ref.set(rfq_doc)
 

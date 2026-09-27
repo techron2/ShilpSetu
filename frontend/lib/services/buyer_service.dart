@@ -76,7 +76,7 @@ class BuyerService {
 
   // ── RFQ ───────────────────────────────────────────────────────────────────
 
-  /// Parse free-text buyer requirement into a structured RFQ via Gemini API.
+  /// Structure a buyer requirement using Gemini when available or backend fallback.
   Future<Map<String, dynamic>?> createRfq({
     required String buyerId,
     required String requirementText,

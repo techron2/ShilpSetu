@@ -50,7 +50,7 @@ class SupplierComparisonScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${displayMatches.length} supplier${displayMatches.length > 1 ? 's' : ''} found via AI matching',
+                    '${displayMatches.length} supplier${displayMatches.length > 1 ? 's' : ''} ranked by requirement match',
                     style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                   ),
                   const SizedBox(height: 16),
@@ -348,7 +348,7 @@ class _SupplierCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'AI Match: ${(score * 100).toStringAsFixed(0)}%',
+                    'Requirement Match: ${(score * 100).toStringAsFixed(0)}%',
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -436,7 +436,7 @@ class _ComparisonTable extends StatelessWidget {
         final r = parseProductRating(Map<String, dynamic>.from(a));
         return r != null ? '⭐ ${r.toStringAsFixed(1)}' : '—';
       })],
-      ['AI Match', ...matches.map((m) {
+      ['Requirement Match', ...matches.map((m) {
         final s = (m['similarity_score'] as num?)?.toDouble() ?? 0;
         return '${(s * 100).toStringAsFixed(0)}%';
       })],
