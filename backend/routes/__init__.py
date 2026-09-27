@@ -7,12 +7,11 @@ from .pricing import pricing_bp
 from .assistant import assistant_bp
 from .matching import matching_bp
 from .rfq import rfq_bp
-from .passport import passport_bp, _HTML_TEMPLATE, _build_passport_payload
+from .passport import passport_bp, render_public_passport
 from .analytics import analytics_bp
 from .promo import promo_bp
 from .clusters import clusters_bp
 from .profile import profile_bp
-from flask import render_template_string
 
 
 def register_routes(app):
@@ -35,5 +34,4 @@ def register_routes(app):
     # Direct web view route for QR code scanner (/passport/<product_id>)
     @app.route('/passport/<product_id>', methods=['GET'])
     def public_passport_view(product_id):
-        passport = _build_passport_payload(product_id)
-        return render_template_string(_HTML_TEMPLATE, passport=passport)
+        return render_public_passport(product_id)

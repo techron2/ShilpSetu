@@ -47,6 +47,14 @@ def _build_feature_string(product: dict, artisan_profile: dict | None) -> str:
     return ' '.join(filter(None, parts)).lower()
 
 
+def _first_recorded_value(*values):
+    """Return the first actual rating/count, preserving zero but skipping null/blank."""
+    for value in values:
+        if value is not None and not (isinstance(value, str) and not value.strip()):
+            return value
+    return None
+
+
 @matching_bp.route('/buyer-supplier', methods=['POST'])
 def match_buyer_supplier():
     """Rank artisans/products against a buyer requirement via cosine similarity.
@@ -149,19 +157,27 @@ def match_buyer_supplier():
             artisan_id = p.get('artisan_id', '')
             artisan = artisans_by_id.get(artisan_id, {})
 
+            rating = _first_recorded_value(artisan.get('rating'), p.get('rating'))
+            review_count = _first_recorded_value(
+                artisan.get('review_count'), p.get('review_count')
+            )
+            artisan_match = {
+                "id":             artisan_id,
+                "name":           artisan.get('name', 'Unknown Artisan'),
+                "region":         artisan.get('region', p.get('region', '')),
+                "artisan_cluster": artisan.get('artisan_cluster', ''),
+                "email":          artisan.get('email', ''),
+            }
+            if rating is not None:
+                artisan_match['rating'] = rating
+            if review_count is not None:
+                artisan_match['review_count'] = review_count
+
             match_obj = {
                 "rank": len(matches) + 1,
                 "similarity_score": round(score, 4),
                 "product": p,
-                "artisan": {
-                    "id":             artisan_id,
-                    "name":           artisan.get('name', 'Unknown Artisan'),
-                    "region":         artisan.get('region', p.get('region', '')),
-                    "artisan_cluster": artisan.get('artisan_cluster', ''),
-                    "rating":         artisan.get('rating', p.get('rating', 4.2)),
-                    "review_count":   artisan.get('review_count', p.get('review_count', 0)),
-                    "email":          artisan.get('email', ''),
-                }
+                "artisan": artisan_match
             }
             matches.append(match_obj)
             seen_artisans.add(artisan_id)

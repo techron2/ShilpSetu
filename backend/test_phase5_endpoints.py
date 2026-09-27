@@ -80,13 +80,13 @@ def run_tests():
         info(f"  Artisan Name:    {p.get('artisan', {}).get('name')}")
         info(f"  Craft Type:      {p.get('craft_type')}")
         info(f"  GI Certification:{p.get('certification')}")
-        info(f"  Provenance Hash: {p.get('provenance_hash')[:24]}...")
+        info(f"  Record Fingerprint: {p.get('record_fingerprint')[:24]}...")
 
     # Test HTML view
     r_html = requests.get(f"{BASE_URL}/passport/{test_product_id}", timeout=10)
     if r_html.status_code == 200 and "Digital Craft Passport" in r_html.text:
         ok("Passport HTML Public Certificate view [200]")
-        info("  Contains styling, craft seal, and authenticity guarantee")
+        info("  Contains styling and recorded-field sections")
     else:
         fail(f"Passport HTML view failed [{r_html.status_code}]")
 

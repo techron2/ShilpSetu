@@ -37,36 +37,8 @@ def _generate_caption_with_gemini(product: dict, artisan: dict, language: str) -
 
     client = genai.Client(api_key=api_key)
 
-    title = product.get('title', 'Handcrafted Indian Artifact')
-    price = product.get('price', 0)
-    category = product.get('category', 'Handicrafts')
-    region = product.get('region') or artisan.get('region') or 'India'
-    materials = ", ".join(product.get('materials', ['Natural Sustainable Materials']))
-    artisan_name = artisan.get('name', 'Heritage Artisan')
     lang_desc = _LANG_NAMES.get(language, language)
-
-    prompt = f"""You are a master social media copywriter for HunarSathi, a platform celebrating traditional Indian artisans.
-Write an authentic, warm, and highly engaging promotional caption suitable for sharing directly on WhatsApp and social media.
-
-Product Details:
-- Title: {title}
-- Craft / Category: {category}
-- Origin Region: {region}
-- Materials: {materials}
-- Price: ₹{price}
-- Artisan: {artisan_name}
-
-Target Language: {lang_desc}
-
-Requirements:
-1. Write primarily in {lang_desc}. If the language is Hindi, use natural, expressive conversational Hindi (Devanagari script).
-2. Highlight the 100% handcrafted authenticity, direct artisan support, and sustainable materials.
-3. Include culturally appealing emojis (🌿, 🪔, 🏺, ✨, 🇮🇳, 🛒).
-4. State the price clearly: ₹{price}.
-5. Include a call to action asking people to message or order to support local artisans directly (#VocalForLocal).
-6. End with relevant hashtags: #HunarSathi #VocalForLocal #HandmadeInIndia #IndianHandicrafts #{category.replace(' ', '')}
-7. Keep the caption concise (between 80 and 150 words).
-8. Return ONLY the caption text without any introductory text, markdown fences, or explanations."""
+    prompt = _build_caption_prompt(product, artisan, lang_desc)
 
     response = client.models.generate_content(
         model='gemini-2.5-flash',
@@ -79,38 +51,147 @@ Requirements:
     return text.strip()
 
 
-def _fallback_caption(product: dict, artisan: dict, language: str) -> str:
-    title = product.get('title', 'हस्तनिर्मित पारंपरिक कलाकृति')
-    price = product.get('price', 0)
-    category = product.get('category', 'Handicraft')
-    region = product.get('region') or artisan.get('region') or 'भारत'
-    artisan_name = artisan.get('name', 'शिल्पकार')
-    pid = product.get('id', 'item')
+def _build_caption_prompt(product: dict, artisan: dict, lang_desc: str) -> str:
+    """Build a prompt from recorded fields only; absent values stay absent."""
+    facts = []
 
+    def add_fact(label, value):
+        if _is_present(value):
+            facts.append(f"- {label}: {_format_fact(value)}")
+
+    add_fact('Product title', product.get('title'))
+    add_fact('Craft / category', product.get('category'))
+    add_fact('Product description', product.get('description'))
+    region = _first_present(product.get('region'), artisan.get('region'))
+    add_fact('Recorded region', region)
+    add_fact('Materials as recorded', product.get('materials'))
+    add_fact('Price in INR', f"₹{product['price']}" if _is_present(product.get('price')) else None)
+    add_fact('Artisan name', artisan.get('name') or product.get('artisan_name'))
+    add_fact('GI / certification metadata as recorded', _first_present(product.get('gi_tag'), product.get('certification')))
+    add_fact(
+        'Fair-trade field as recorded',
+        _first_present(product.get('fair_trade_verified'), artisan.get('fair_trade_verified')),
+    )
+    add_fact(
+        'Eco-friendly field as recorded',
+        _first_present(product.get('eco_friendly'), artisan.get('eco_friendly')),
+    )
+    add_fact(
+        'Sustainability field as recorded',
+        _first_present(
+            product.get('sustainability'),
+            product.get('sustainable'),
+            artisan.get('sustainability'),
+            artisan.get('sustainable'),
+        ),
+    )
+
+    available_facts = '\n'.join(facts) if facts else '- No product metadata was provided.'
+    return f"""You write warm, concise promotional captions for HunarSathi listings.
+
+Recorded product facts (the only product-specific facts you may use):
+{available_facts}
+
+Target language: {lang_desc}
+
+Truthfulness rules:
+- Use only the recorded facts above. Omit missing fields; do not fill gaps with assumptions.
+- Do not infer or invent GI certification, sustainability, eco-friendliness, fair-trade certification, artisan experience, heritage generations, materials, geographic origin, verification, or authenticity certification when the corresponding fact is absent.
+- A GI or certification value is only metadata as recorded; do not upgrade it to government, third-party, or verified certification.
+- Do not describe the item as 100% handcrafted, authentic, natural, sustainable, or eco-friendly unless that exact claim is supported by a recorded field above.
+- A general invitation to discover the listing or support artisans through HunarSathi is allowed; do not claim guaranteed direct compensation or verification.
+
+Write primarily in the target language. Include the recorded price only if present. Keep the caption concise and return only caption text, without markdown or explanations."""
+
+
+def _fallback_caption(product: dict, artisan: dict, language: str) -> str:
+    title = _first_present(product.get('title'))
+    price = product.get('price')
+    category = _first_present(product.get('category'))
+    region = _first_present(product.get('region'), artisan.get('region'))
+    artisan_name = _first_present(artisan.get('name'), product.get('artisan_name'))
+    materials = _format_fact(product.get('materials'))
+    gi_value = _first_present(product.get('gi_tag'), product.get('certification'))
+    fair_trade = _first_present(
+        product.get('fair_trade_verified'), artisan.get('fair_trade_verified')
+    )
+    eco_friendly = _first_present(product.get('eco_friendly'), artisan.get('eco_friendly'))
+    sustainability = _first_present(
+        product.get('sustainability'),
+        product.get('sustainable'),
+        artisan.get('sustainability'),
+        artisan.get('sustainable'),
+    )
+
+    lines = []
     if language.startswith('hi'):
-        return (
-            f"🌿 *हुनरसाथी विशेष — {title}* 🏺✨\n\n"
-            f"नमस्ते जी! यह सुंदर और शत-प्रतिशत प्राकृतिक {title} हमारे हुनरमंद शिल्पकार {artisan_name} ({region}) द्वारा "
-            f"पूर्णतः पारंपरिक पद्धति से हस्तनिर्मित किया गया है।\n\n"
-            f"✅ 100% शुद्ध और प्रामाणिक हस्तशिल्प\n"
-            f"🌱 पर्यावरण अनुकूल एवं टिकाऊ\n"
-            f"💰 *विशेष मूल्य: मात्र ₹{price}*\n\n"
-            f"सीधे स्थानीय कारीगरों को समर्थन दें और अपने घर में लाएं भारतीय विरासत की मिठास! 🪔\n\n"
-            f"📲 ऑर्डर करने या पूछताछ के लिए अभी रिप्लाई करें या हुनरसाथी पर देखें!\n\n"
-            f"#HunarSathi #VocalForLocal #HandmadeInIndia #AtmanirbharBharat #{category}"
-        )
+        lines.append(f"✨ HunarSathi पर देखें: {title}" if title else '✨ HunarSathi पर यह लिस्टिंग देखें')
+        if category:
+            lines.append(f"श्रेणी: {category}")
+        if _is_present(price):
+            lines.append(f"कीमत: ₹{price}")
+        if artisan_name:
+            lines.append(f"शिल्पकार: {artisan_name}")
+        if region:
+            lines.append(f"दर्ज क्षेत्र: {region}")
+        if materials:
+            lines.append(f"दर्ज सामग्री: {materials}")
+        if gi_value:
+            lines.append(f"GI / प्रमाणन फ़ील्ड में दर्ज: {gi_value}")
+        if fair_trade is not None:
+            lines.append(f"Fair-trade फ़ील्ड में दर्ज: {fair_trade}")
+        if eco_friendly is not None:
+            lines.append(f"Eco-friendly फ़ील्ड में दर्ज: {eco_friendly}")
+        if sustainability is not None:
+            lines.append(f"Sustainability फ़ील्ड में दर्ज: {sustainability}")
+        lines.extend(['', 'HunarSathi के माध्यम से शिल्पकारों को समर्थन दें।', '#HunarSathi #SupportArtisans'])
     else:
-        return (
-            f"🌿 *Direct from Heritage Artisans: {title}* 🏺✨\n\n"
-            f"Support local craft! This authentic, 100% handcrafted {title} was lovingly created by "
-            f"master artisan {artisan_name} from {region}.\n\n"
-            f"✅ Authentic GI Certified Craftsmanship\n"
-            f"🌱 Sustainable & Eco-friendly\n"
-            f"💰 *Special Price: ₹{price}*\n\n"
-            f"Bring home the soul of Indian heritage while empowering rural artisan communities directly. 🇮🇳\n\n"
-            f"📲 Reply to this message or order via HunarSathi today!\n\n"
-            f"#HunarSathi #VocalForLocal #HandmadeInIndia #SupportArtisans #{category}"
-        )
+        lines.append(f"✨ Discover {title} on HunarSathi" if title else '✨ Discover this listing on HunarSathi')
+        if category:
+            lines.append(f"Category: {category}")
+        if _is_present(price):
+            lines.append(f"Price: ₹{price}")
+        if artisan_name:
+            lines.append(f"Artisan: {artisan_name}")
+        if region:
+            lines.append(f"Recorded region: {region}")
+        if materials:
+            lines.append(f"Materials as listed: {materials}")
+        if gi_value:
+            lines.append(f"GI / certification field as recorded: {gi_value}")
+        if fair_trade is not None:
+            lines.append(f"Fair-trade field as recorded: {fair_trade}")
+        if eco_friendly is not None:
+            lines.append(f"Eco-friendly field as recorded: {eco_friendly}")
+        if sustainability is not None:
+            lines.append(f"Sustainability field as recorded: {sustainability}")
+        lines.extend(['', 'Support artisans through HunarSathi.', '#HunarSathi #SupportArtisans'])
+    return '\n'.join(lines)
+
+
+def _is_present(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, tuple, dict)):
+        return bool(value)
+    return True
+
+
+def _first_present(*values):
+    for value in values:
+        if _is_present(value):
+            return value.strip() if isinstance(value, str) else value
+    return None
+
+
+def _format_fact(value):
+    if isinstance(value, (list, tuple)):
+        return ', '.join(str(item).strip() for item in value if _is_present(item))
+    if isinstance(value, dict):
+        return ', '.join(f'{key}: {item}' for key, item in value.items() if _is_present(item))
+    return str(value).strip() if value is not None else ''
 
 
 @promo_bp.route('/generate', methods=['POST'])
@@ -129,29 +210,23 @@ def generate_promo_caption():
         return jsonify({"success": False, "error": "product_id is required"}), 400
 
     db = get_firestore_client()
+    if db is None:
+        return jsonify({"success": False, "error": "Product data unavailable"}), 503
+
     product = None
     artisan = {}
 
-    if db:
-        try:
-            pdoc = db.collection('products').document(product_id).get()
-            if pdoc.exists:
-                product = pdoc.to_dict()
-                product['id'] = pdoc.id
-        except Exception as e:
-            logger.warning(f"Error fetching product {product_id}: {e}")
+    try:
+        pdoc = db.collection('products').document(product_id).get()
+        if pdoc.exists:
+            product = pdoc.to_dict() or {}
+            product['id'] = pdoc.id
+    except Exception:
+        logger.warning("Could not load product metadata for promo generation")
+        return jsonify({"success": False, "error": "Product data unavailable"}), 503
 
-    if not product:
-        product = {
-            "id": product_id,
-            "title": "हस्तनिर्मित पारंपरिक टेराकोटा कुल्हड़ (Terracotta Kulhad Set)",
-            "category": "Pottery",
-            "price": 350.0,
-            "region": "Gorakhpur, Uttar Pradesh",
-            "materials": ["River Clay", "Natural Glaze"],
-            "images": ["https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800"],
-            "artisan_id": "artisan_demo_01"
-        }
+    if product is None:
+        return jsonify({"success": False, "error": "Product not found"}), 404
 
     artisan_id = product.get('artisan_id')
     if artisan_id and db:
@@ -174,8 +249,10 @@ def generate_promo_caption():
         logger.info(f"Gemini promo generation fallback triggered: {ge}")
         caption = _fallback_caption(product, artisan, language)
 
-    images = product.get('images', [])
-    image_url = images[0] if isinstance(images, list) and images else ""
+    images = product.get('images')
+    image_url = _first_present(product.get('image_url'))
+    if not image_url and isinstance(images, list) and images:
+        image_url = _first_present(images[0]) or ''
 
     host = request.host_url.rstrip('/')
     passport_url = f"{host}/passport/{product_id}"

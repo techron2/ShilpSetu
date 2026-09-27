@@ -87,11 +87,15 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
     if (!mounted) return;
     setState(() => _isGeneratingPromo = false);
 
-    // Local fallback describes only the current product, no fake passport link.
+    // Keep the local fallback limited to the listing's title and stored price.
+    final shareTitle = title.trim().isNotEmpty ? title.trim() : 'this listing';
+    final rawPrice = p['price'];
+    final priceLine = rawPrice is num ? 'Price: ${formatInr(rawPrice.toDouble())}\n' : '';
     final caption = promo?['caption'] ??
-        '🌿 Check out this authentic handcrafted $title on HunarSathi!\n\n'
-        'Price: ${formatInr(price)}\n'
-        '#HunarSathi #VocalForLocal #HandmadeInIndia';
+        'Discover $shareTitle on HunarSathi.\n'
+        '$priceLine'
+        'Support artisans through HunarSathi.\n'
+        '#HunarSathi #SupportArtisans';
 
     if (!mounted) return;
     showModalBottomSheet(
@@ -181,7 +185,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.verified_user_rounded, color: AppTheme.successGreen, size: 26),
+            Icon(Icons.qr_code_2_rounded, color: AppTheme.primaryTerracotta, size: 26),
             SizedBox(width: 8),
             Text('Digital Craft Passport'),
           ],
@@ -212,7 +216,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Origin: ${region.isNotEmpty ? region : 'India'} • 100% Handcrafted',
+              region.isNotEmpty
+                  ? 'Recorded region: $region'
+                  : 'Product and artisan details are shown as recorded when available.',
               style: const TextStyle(fontSize: 12, color: Color(0xFF6B5E57)),
             ),
             const SizedBox(height: 12),
@@ -821,10 +827,14 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(6),
                                           decoration: const BoxDecoration(
-                                            color: Color(0xFFE8F5E9),
+                                            color: Color(0xFFFFF4E8),
                                             shape: BoxShape.circle,
                                           ),
-                                          child: const Icon(Icons.verified_rounded, color: Color(0xFF2E7D32), size: 18),
+                                          child: const Icon(
+                                            Icons.qr_code_2_rounded,
+                                            color: AppTheme.primaryTerracotta,
+                                            size: 18,
+                                          ),
                                         ),
                                         const SizedBox(width: 8),
                                         const Expanded(
@@ -841,13 +851,13 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                     ),
                                     const SizedBox(height: 6),
                                     const Text(
-                                      'Scan this QR code to verify GI certification, artisan heritage story, and authentic sustainable materials.',
+                                      'Scan this QR code to view recorded product, artisan, region, and provenance details when available.',
                                       style: TextStyle(fontSize: 12, color: Color(0xFF6B5E57), height: 1.4),
                                     ),
                                     const SizedBox(height: 10),
                                     TextButton.icon(
                                       icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                                      label: const Text('View Web Certificate', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      label: const Text('View Web Passport', style: TextStyle(fontWeight: FontWeight.w700)),
                                       onPressed: _showPassportPreviewDialog,
                                       style: TextButton.styleFrom(
                                         foregroundColor: AppTheme.primaryTerracotta,
