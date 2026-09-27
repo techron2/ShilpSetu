@@ -108,6 +108,8 @@ class LanguageProvider extends ChangeNotifier {
     // HINDI (hi)
     // ═════════════════════════════════════════════════════════════════════════
     'hi': {
+      'order_filter_out_for_delivery': '📦 डिलीवरी के लिए निकला',
+      'order_out_for_delivery_btn': 'डिलीवरी के लिए निकला',
       // App Branding & General
       'app_title': 'हुनरसाथी',
       'app_tagline': 'परंपरा • शिल्प • कल',
@@ -239,7 +241,7 @@ class LanguageProvider extends ChangeNotifier {
       'order_no_orders': 'कोई ऑर्डर नहीं मिला',
       'order_pending_banner': 'आपके {count} ऑर्डर मंजूरी के इंतज़ार में हैं',
       'orders_empty_desc': 'खरीदारों के नए ऑर्डर यहाँ दिखाई देंगे',
-      'order_confirm_btn': 'पुष्टि करें',
+      'order_confirm_btn': 'ऑर्डर स्वीकारें',
       'order_ship_btn': 'भेजें',
       'order_deliver_btn': 'वितरित चिह्नित करें',
 
@@ -466,6 +468,7 @@ class LanguageProvider extends ChangeNotifier {
       // Orders Screen
       'orders_title': 'Orders',
       'order_filter_all': 'All',
+      'order_filter_out_for_delivery': 'Out for Delivery',
       'order_filter_pending': '⏳ Pending',
       'order_filter_confirmed': '✅ Confirmed',
       'order_filter_shipped': '🚚 Shipped',
@@ -477,8 +480,9 @@ class LanguageProvider extends ChangeNotifier {
       'order_no_orders': 'No orders found',
       'order_pending_banner': 'You have {count} pending order(s) to confirm',
       'orders_empty_desc': 'Orders from buyers will appear here',
-      'order_confirm_btn': 'Confirm',
-      'order_ship_btn': 'Mark In-Transit',
+      'order_confirm_btn': 'Accept Order',
+      'order_ship_btn': 'Mark Shipped',
+      'order_out_for_delivery_btn': 'Out for Delivery',
       'order_deliver_btn': 'Mark Delivered',
 
       // Add Product Screen
@@ -584,6 +588,8 @@ class LanguageProvider extends ChangeNotifier {
     // MARATHI (mr)
     // ═════════════════════════════════════════════════════════════════════════
     'mr': {
+      'order_filter_out_for_delivery': '📦 वितरणासाठी रवाना',
+      'order_out_for_delivery_btn': 'वितरणासाठी रवाना',
       // App Branding & General
       'app_title': 'हुनरसाथी',
       'app_tagline': 'परंपरा • शिल्प • भविष्य',
@@ -715,7 +721,7 @@ class LanguageProvider extends ChangeNotifier {
       'order_no_orders': 'कोणतीही ऑर्डर आढळली नाही',
       'order_pending_banner': 'तुमच्याकडे मंजुरीसाठी {count} प्रलंबित ऑर्डर्स आहेत',
       'orders_empty_desc': 'खरेदीदारांकडून येणाऱ्या नवीन ऑर्डर्स येथे दिसतील',
-      'order_confirm_btn': 'पुष्टी करा',
+      'order_confirm_btn': 'ऑर्डर स्वीकारा',
       'order_ship_btn': 'पाठवा',
       'order_deliver_btn': 'वितरित झाले म्हणून चिन्हांकित करा',
 

@@ -11,6 +11,7 @@ import '../../utils/buyer_metadata.dart';
 import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/delivery_address_sheet.dart';
+import '../../widgets/order_placed_dialog.dart';
 import '../../widgets/payment_method_sheet.dart';
 import 'rfq_screen.dart';
 import 'supplier_comparison_screen.dart';
@@ -289,74 +290,10 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
     if (!mounted || order == null) return;
 
-    // Step 3: Show Celebration Dialog
-    final isUpi = order.paymentMethod.toUpperCase() == 'UPI';
-    showDialog(
+    // Step 3: Show the returned order and offer a direct handoff to My Orders.
+    showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: AppTheme.successGreen, size: 28),
-            SizedBox(width: 10),
-            Text('Order Placed! 🎉'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Text('Quantity: $_quantity unit${_quantity > 1 ? 's' : ''}'),
-            Text('Total: ${formatInr(price * _quantity)}'),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  isUpi ? Icons.account_balance_wallet_rounded : Icons.payments_rounded,
-                  size: 14,
-                  color: isUpi ? AppTheme.successGreen : const Color(0xFFF59E0B),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  isUpi ? 'Payment: Paid via UPI' : 'Payment: Cash on Delivery',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isUpi ? AppTheme.successGreen : const Color(0xFFD97706),
-                  ),
-                ),
-              ],
-            ),
-            if (order.deliveryAddress.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                'Shipping to: ${order.deliveryAddress}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
-              ),
-            ],
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'Order ID will appear in your Orders screen. The artisan will confirm shortly.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      builder: (_) => OrderPlacedDialog(order: order),
     );
   }
 

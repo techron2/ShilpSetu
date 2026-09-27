@@ -1,12 +1,17 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/order_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/buyer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/inr.dart';
 import '../../widgets/app_back_button.dart';
 
-/// Orders screen for buyers — fetches from backend REST API.
+/// Buyer orders use REST for initial/manual refresh and a buyer-scoped
+/// Firestore stream for live status updates when Firebase is initialized.
 class BuyerOrdersScreen extends StatefulWidget {
   final List<OrderModel>? initialOrders;
   const BuyerOrdersScreen({super.key, this.initialOrders});
@@ -18,13 +23,18 @@ class BuyerOrdersScreen extends StatefulWidget {
 class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
   List<OrderModel> _orders = [];
   bool _isLoading = true;
+  bool _identityUnavailable = false;
+  bool _identityChecked = false;
   String _filterStatus = 'all';
+  String _buyerId = '';
+  StreamSubscription<QuerySnapshot>? _streamSub;
 
   static const List<Map<String, String>> _statusFilters = [
     {'key': 'all',       'label': 'All'},
     {'key': 'pending',   'label': '⏳ Pending'},
     {'key': 'confirmed', 'label': '✅ Confirmed'},
     {'key': 'shipped',   'label': '🚚 Shipped'},
+    {'key': 'out_for_delivery', 'label': '📦 Out for Delivery'},
     {'key': 'delivered', 'label': '📦 Delivered'},
     {'key': 'paid',      'label': '💰 Paid'},
   ];
@@ -35,22 +45,94 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
     if (widget.initialOrders != null) {
       _orders = List.from(widget.initialOrders!);
       _isLoading = false;
-    } else {
-      _loadOrders();
     }
   }
 
-  Future<void> _loadOrders() async {
-    final user = context.read<AppAuthProvider>().userModel;
-    if (user == null) return;
-    setState(() => _isLoading = true);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.initialOrders != null) return;
 
-    final orders = await BuyerService.instance.getOrders(buyerId: user.uid);
+    final buyerId = context.read<AppAuthProvider>().userModel?.uid.trim() ?? '';
+    if (_identityChecked && buyerId == _buyerId) return;
+
+    _identityChecked = true;
+    _buyerId = buyerId;
+    _streamSub?.cancel();
     if (mounted) {
+      setState(() {
+        _orders = [];
+        _isLoading = true;
+        _identityUnavailable = false;
+      });
+    }
+    _loadOrders();
+    _setupFirestoreStream(buyerId);
+  }
+
+  @override
+  void dispose() {
+    _streamSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadOrders() async {
+    if (widget.initialOrders != null) return;
+    final buyerId = _buyerId;
+    if (buyerId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _identityUnavailable = true;
+        });
+      }
+      return;
+    }
+    if (_orders.isEmpty && mounted) setState(() => _isLoading = true);
+
+    try {
+      final orders = await BuyerService.instance.getOrders(buyerId: buyerId);
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (!mounted || buyerId != _buyerId) return;
       setState(() {
         _orders = orders;
         _isLoading = false;
+        _identityUnavailable = false;
       });
+    } catch (_) {
+      if (!mounted || buyerId != _buyerId) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _setupFirestoreStream(String buyerId) {
+    if (Firebase.apps.isEmpty || buyerId.isEmpty) return;
+
+    try {
+      _streamSub = FirebaseFirestore.instance
+          .collection('orders')
+          .where('buyer_id', isEqualTo: buyerId)
+          .snapshots()
+          .listen((snapshot) {
+        final orders = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return OrderModel.fromJson(data);
+        }).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        if (!mounted || buyerId != _buyerId) return;
+        setState(() {
+          _orders = orders;
+          _isLoading = false;
+          _identityUnavailable = false;
+        });
+      }, onError: (Object error) {
+        // The REST result remains available; the refresh action can retry it.
+        debugPrint('Buyer orders Firestore stream error; keeping REST data: $error');
+      });
+    } catch (error) {
+      debugPrint('Buyer orders Firestore stream setup failed; keeping REST data: $error');
     }
   }
 
@@ -58,6 +140,9 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
     if (_filterStatus == 'all') return _orders;
     return _orders.where((o) => o.status == _filterStatus).toList();
   }
+
+  String get _selectedFilterLabel => _statusFilters
+      .firstWhere((filter) => filter['key'] == _filterStatus)['label']!;
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +216,7 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
   }
 
   Widget _emptyState() {
+    final identityUnavailable = _identityUnavailable;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -149,9 +235,11 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            _filterStatus == 'all'
-                ? 'अभी कोई ऑर्डर नहीं\n(No orders yet)'
-                : 'No $_filterStatus orders',
+            identityUnavailable
+                ? 'Sign in to view your orders'
+                : _filterStatus == 'all'
+                    ? 'अभी कोई ऑर्डर नहीं\n(No orders yet)'
+                    : 'No $_selectedFilterLabel orders',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 20,
@@ -161,10 +249,12 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Browse products and place your first order!',
+          Text(
+            identityUnavailable
+                ? 'Your buyer profile is not available yet.'
+                : 'Browse products and place your first order!',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
         ],
       ),
@@ -183,6 +273,7 @@ class _OrderCard extends StatelessWidget {
       case 'pending':   return const Color(0xFFF59E0B);
       case 'confirmed': return AppTheme.successGreen;
       case 'shipped':   return AppTheme.inTransitBlue;
+      case 'out_for_delivery': return AppTheme.inTransitBlue;
       case 'delivered': return const Color(0xFF7C3AED);
       case 'paid':      return AppTheme.successGreen;
       case 'cancelled': return AppTheme.warningRed;
@@ -309,7 +400,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '₹${order.totalPrice.toStringAsFixed(0)}',
+                      formatInr(order.totalPrice),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,

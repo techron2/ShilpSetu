@@ -25,7 +25,7 @@ void main() {
   });
 
   testWidgets(
-      'TEST 1: On "All" tab, tapping Mark Delivered updates badge immediately without reload; switching to Shipped tab excludes it',
+      'TEST 1: Shipped advances through delivery and updates filters immediately',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -60,17 +60,20 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Verify initial state: shows "Mark Delivered" button on the card
-    expect(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'), findsOneWidget);
+    // Verify the shipped order's next action is out for delivery.
+    expect(find.widgetWithText(ElevatedButton, '📍 Out for Delivery'), findsOneWidget);
     expect(find.text('Madhubani Handcrafted Painting'), findsOneWidget);
 
-    // Tap "Mark Delivered"
-    await tester.tap(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'));
+    // Tap "Out for Delivery"
+    await tester.tap(find.widgetWithText(ElevatedButton, '📍 Out for Delivery'));
     await tester.pumpAndSettle();
 
-    // 1. On "All" tab: status badge updates to "📦 Delivered" immediately with NO manual refresh
+    expect(find.text('🚚 Out for Delivery'), findsWidgets);
+    expect(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'));
+    await tester.pumpAndSettle();
     expect(find.text('📦 Delivered'), findsWidgets);
-    // Action button should now be gone because order is delivered
     expect(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'), findsNothing);
 
     // 2. Switch to the "Shipped" filter ChoiceChip
@@ -91,7 +94,7 @@ void main() {
   });
 
   testWidgets(
-      'TEST 2: On "Shipped" tab directly, tapping Mark Delivered immediately removes order from view',
+      'TEST 2: On "Shipped" tab, Out for Delivery immediately removes the order from view',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -130,10 +133,10 @@ void main() {
 
     // Verify order is present
     expect(find.text('Blue Pottery Vase'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, '📍 Out for Delivery'), findsOneWidget);
 
-    // Tap "Mark Delivered" while filtered by Shipped
-    await tester.tap(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'));
+    // Tap "Out for Delivery" while filtered by Shipped
+    await tester.tap(find.widgetWithText(ElevatedButton, '📍 Out for Delivery'));
     await tester.pumpAndSettle();
 
     // Order must immediately vanish from the Shipped view without manual refresh
@@ -176,22 +179,22 @@ void main() {
     await tester.pumpAndSettle();
 
     // Initially pending action button exists
-    expect(find.widgetWithText(ElevatedButton, '✅ Confirm'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, '✅ Accept Order'), findsOneWidget);
 
-    // Tap "Confirm"
-    await tester.tap(find.widgetWithText(ElevatedButton, '✅ Confirm'));
+    // Tap "Accept Order"
+    await tester.tap(find.widgetWithText(ElevatedButton, '✅ Accept Order'));
     await tester.pumpAndSettle();
 
-    // Status immediately updates to "Confirmed" and action button advances to "🚚 Mark In-Transit"
-    expect(find.widgetWithText(ElevatedButton, '🚚 Mark In-Transit'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, '✅ Confirm'), findsNothing);
+    // Status immediately updates to confirmed and the next action is shipped.
+    expect(find.widgetWithText(ElevatedButton, '🚚 Mark Shipped'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, '✅ Accept Order'), findsNothing);
 
-    // Tap "Mark In-Transit"
-    await tester.tap(find.widgetWithText(ElevatedButton, '🚚 Mark In-Transit'));
+    // Tap "Mark Shipped"
+    await tester.tap(find.widgetWithText(ElevatedButton, '🚚 Mark Shipped'));
     await tester.pumpAndSettle();
 
-    // Status immediately updates to "Shipped" and action button advances to "📦 Mark Delivered"
-    expect(find.widgetWithText(ElevatedButton, '📦 Mark Delivered'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, '🚚 Mark In-Transit'), findsNothing);
+    // Status immediately updates to shipped and the next action is out for delivery.
+    expect(find.widgetWithText(ElevatedButton, '📍 Out for Delivery'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, '🚚 Mark Shipped'), findsNothing);
   });
 }

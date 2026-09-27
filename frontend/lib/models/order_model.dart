@@ -29,7 +29,9 @@ class OrderModel {
   final String artisanId;
   final int quantity;
   final double totalPrice;
-  final String status; // pending | confirmed | shipped | delivered | paid | cancelled
+  /// Backend lifecycle: pending -> confirmed -> shipped -> out_for_delivery
+  /// -> delivered -> paid. Cancelled is terminal and outside that progression.
+  final String status;
   final String deliveryAddress;
   final Map<String, dynamic>? deliveryAddressMap;
   final String buyerName;
@@ -168,7 +170,7 @@ class OrderModel {
   };
 
   static const List<String> statusFlow = [
-    'pending', 'confirmed', 'shipped', 'delivered', 'paid'
+    'pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'paid'
   ];
 
   bool get isPaid => paymentStatus.toLowerCase() == 'paid';
@@ -236,6 +238,7 @@ class OrderModel {
       case 'pending':   return '⏳ Pending';
       case 'confirmed': return '✅ Confirmed';
       case 'shipped':   return '🚚 Shipped';
+      case 'out_for_delivery': return '🚚 Out for Delivery';
       case 'delivered': return '📦 Delivered';
       case 'paid':      return '💰 Paid';
       case 'cancelled': return '❌ Cancelled';
@@ -243,4 +246,3 @@ class OrderModel {
     }
   }
 }
-

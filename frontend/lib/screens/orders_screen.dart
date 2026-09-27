@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/buyer_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/inr.dart';
 
 /// Orders screen for artisans with immediate in-memory UI updates,
 /// real-time Firestore streaming, and pull-to-refresh.
@@ -144,6 +145,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       {'key': 'pending',   'label': lang.getText('order_filter_pending')},
       {'key': 'confirmed', 'label': lang.getText('order_filter_confirmed')},
       {'key': 'shipped',   'label': lang.getText('order_filter_shipped')},
+      {'key': 'out_for_delivery', 'label': lang.getText('order_filter_out_for_delivery')},
       {'key': 'delivered', 'label': lang.getText('order_filter_delivered')},
       {'key': 'paid',      'label': lang.getText('order_filter_paid')},
     ];
@@ -347,6 +349,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
       case 'pending':   return const Color(0xFFF59E0B);
       case 'confirmed': return AppTheme.successGreen;
       case 'shipped':   return AppTheme.inTransitBlue;
+      case 'out_for_delivery': return AppTheme.inTransitBlue;
       case 'delivered': return const Color(0xFF7C3AED);
       case 'paid':      return AppTheme.successGreen;
       case 'cancelled': return AppTheme.warningRed;
@@ -371,11 +374,13 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
       if (success) {
         // Immediately notify parent to update in-memory list and re-apply active filter
         widget.onStatusUpdated?.call(newStatus);
+        final visibleOrderId = widget.order.id.length > 8
+            ? widget.order.id.substring(0, 8)
+            : widget.order.id;
+        final visibleStatus = widget.order.copyWith(status: newStatus).statusLabel;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Order #${widget.order.id.length > 8 ? widget.order.id.substring(0, 8) : widget.order.id} marked as ${newStatus[0].toUpperCase()}${newStatus.substring(1)}',
-            ),
+            content: Text('Order #$visibleOrderId marked as $visibleStatus'),
             backgroundColor: AppTheme.successGreen,
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
@@ -507,7 +512,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '₹${order.totalPrice.toStringAsFixed(0)}',
+                      formatInr(order.totalPrice),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -542,7 +547,7 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
               ],
             ),
 
-            // Artisan action buttons: Confirm (pending -> confirmed), Ship (confirmed -> shipped), Deliver (shipped -> delivered)
+            // Keep fulfillment actions aligned with the backend lifecycle.
             if (!_updating &&
                 order.status != 'delivered' &&
                 order.status != 'paid' &&
@@ -573,13 +578,15 @@ class _ArtisanOrderCardState extends State<_ArtisanOrderCard> {
     final nextStatus = {
       'pending':   'confirmed',
       'confirmed': 'shipped',
-      'shipped':   'delivered',
+      'shipped':   'out_for_delivery',
+      'out_for_delivery': 'delivered',
     }[currentStatus];
 
     final nextLabel = {
       'pending':   '✅ ${lang.getText('order_confirm_btn')}',
       'confirmed': '🚚 ${lang.getText('order_ship_btn')}',
-      'shipped':   '📦 ${lang.getText('order_deliver_btn')}',
+      'shipped':   '📍 ${lang.getText('order_out_for_delivery_btn')}',
+      'out_for_delivery': '📦 ${lang.getText('order_deliver_btn')}',
     }[currentStatus];
 
     if (nextStatus == null) return const SizedBox.shrink();
